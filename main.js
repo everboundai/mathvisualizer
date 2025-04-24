@@ -100,17 +100,25 @@ const sketch = (p) => {
         const activeViz = visualizations[currentVizKey];
 
         if (activeViz?.draw) {
-            const needsCentering = (currentVizKey === 'flower' || currentVizKey === 'lsystem');
+            // *** Apply centering translate for visualizations that need it ***
+            const needsCentering = (
+                currentVizKey === 'flower' ||
+                currentVizKey === 'lsystem' ||
+                currentVizKey === 'lissajous' // <-- Added Lissajous here
+            );
+
             if (needsCentering) {
                 p.push();
                 p.translate(p.width / 2, p.height / 2);
             }
 
+            // Call the active visualization's draw method
             activeViz.draw({
                 animate: animateViz,
                 speed: animationSpeed
             });
 
+            // Pop the translation matrix if it was pushed
             if (needsCentering) {
                 p.pop();
             }
@@ -160,7 +168,6 @@ const sketch = (p) => {
         if (currentVizKey === 'about') {
             displayName = "About";
             formulaHTML = "Select a visualization...";
-            // Simplified 'about' text slightly
             explanationHTML = "<p>Created by Joshua Prull, 2025. Select a visualization to explore interactive math concepts. Use the controls to adjust parameters.</p>";
         } else if (activeViz) {
             try {
