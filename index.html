@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Math Visualizer</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <h1>Interactive Math Visualizer</h1>
+        <p class="subtitle">By Joshua Prull 2025</p>
+    </header>
+
+    <div id="vizTitleContainer" style="display: none;"> <h2><span id="vizName"></span>: <span id="vizFormulaHeader"></span></h2>
+    </div>
+
+    <div class="main-container"> <div id="controls"> <h2>Controls</h2>
+
+            <div class="control-group general-controls">
+                <label for="vizSelect">Visualization:</label>
+                <select id="vizSelect">
+                    <option value="about" selected>-- Select or About --</option>
+                    <option value="flower">Polar Flower (Rose)</option>
+                    <option value="lorenz">Lorenz Attractor</option>
+                    </select>
+            </div>
+
+            <div class="control-group general-controls animation-controls" style="display: none;"> <div>
+                     <input type="checkbox" id="animateCheck">
+                     <label for="animateCheck">Animate?</label>
+                 </div>
+                 <div class="speed-control">
+                     <label for="animSpeed">Speed: <span id="animSpeedVal">1.0</span></label>
+                     <input type="range" id="animSpeed" min="0.1" max="3.0" value="1.0" step="0.1">
+                 </div>
+            </div>
+
+            <div id="specificControlsContainer">
+                <div id="flowerControls" class="viz-controls">
+                    <h4>Parameters</h4>
+                    <div class="control-group">
+                        <label for="flowerA">Amplitude (a): <span id="flowerAVal">150</span></label>
+                        <input type="range" id="flowerA" min="50" max="250" value="150" step="1">
+                    </div>
+                    <div class="control-group">
+                        <label for="flowerK">Petal Factor (k): <span id="flowerKVal">5</span></label>
+                        <input type="range" id="flowerK" min="1" max="10" value="5" step="0.1">
+                    </div>
+                </div>
+
+                <div id="lorenzControls" class="viz-controls">
+                    <h4>Parameters</h4>
+                     <div class="control-group">
+                        <label for="lorenzSigma">&sigma;: <span id="lorenzSigmaVal">10.0</span></label>
+                        <input type="range" id="lorenzSigma" min="1" max="30" value="10" step="0.1">
+                     </div>
+                     <div class="control-group">
+                        <label for="lorenzRho">&rho;: <span id="lorenzRhoVal">28.0</span></label>
+                        <input type="range" id="lorenzRho" min="1" max="50" value="28" step="0.1">
+                     </div>
+                     <div class="control-group">
+                        <label for="lorenzBeta">&beta;: <span id="lorenzBetaVal">2.67</span></label>
+                        <input type="range" id="lorenzBeta" min="0.1" max="5" value="2.667" step="0.01">
+                     </div>
+                     <div class="control-group">
+                        <label for="lorenzSteps">Points: <span id="lorenzStepsVal">10000</span></label>
+                        <input type="range" id="lorenzSteps" min="1000" max="20000" value="10000" step="500">
+                     </div>
+                     <div class="control-group">
+                        <label for="lorenzDt">dt: <span id="lorenzDtVal">0.01</span></label>
+                        <input type="range" id="lorenzDt" min="0.001" max="0.05" value="0.01" step="0.001">
+                     </div>
+                     <div class="control-group">
+                         <button id="restartLorenzBtn">Restart Simulation</button>
+                     </div>
+                     <p class="note">(2D Projection Shown)</p>
+                </div>
+                </div> </div> <div id="canvasContainer"> </div>
+
+    </div> <div id="explanationContainer" class="explanation-section">
+        </div>
+
+
+    <script src="p5.min.js"></script>
+    <script type="module" src="main.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,165 @@
+/* ----- Variables & Basic Setup ----- */
+:root {
+    --bg-color: #1a1a2e; /* Darker navy */
+    --text-color: #e0e0e0; /* Off-white */
+    --header-bg: #162447; /* Dark blue */
+    --controls-bg: #1f2833; /* Dark greyish blue */
+    --canvas-bg: #000000; /* Black */
+    --canvas-border: #4b5a77;
+    --primary-accent: #4ecdc4; /* Teal accent */
+    --secondary-accent: #f95959; /* Coral red for values */
+    --formula-bg: #10101a;
+    --border-color: #4b5a77;
+    --note-color: #a0a0a0; /* Lighter grey for notes */
+
+    --font-main: 'Roboto', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; /* Example: Google Font */
+    --font-code: 'Fira Code', 'Consolas', 'Courier New', Courier, monospace; /* Example: Monospace with ligatures */
+}
+
+/* Optional: Import Google Fonts if needed */
+/* @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&family=Fira+Code&display=swap'); */
+
+body {
+    font-family: var(--font-main);
+    line-height: 1.6;
+    margin: 0;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    font-size: 16px;
+}
+
+/* ----- Layout ----- */
+header {
+    background-color: var(--header-bg);
+    padding: 15px 30px;
+    border-bottom: 1px solid var(--border-color);
+}
+header h1 { color: var(--text-color); margin: 0; font-size: 1.8em; line-height: 1.2;}
+header .subtitle { /* Style for subtitle */
+    color: var(--note-color);
+    font-size: 0.9em;
+    margin: 5px 0 0 0;
+    font-style: italic;
+}
+
+
+#vizTitleContainer { /* New container for Title/Formula Header */
+    padding: 10px 30px;
+    text-align: center;
+    background-color: var(--header-bg); /* Match header or slightly different */
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 20px; /* Space below header */
+    display: none; /* Initially Hidden by JS */
+}
+#vizTitleContainer h2 {
+    margin: 0;
+    font-size: 1.4em;
+    color: var(--text-color);
+    font-weight: normal;
+    border-bottom: none; /* Remove default h2 border */
+    padding-bottom: 0;
+}
+#vizTitleContainer #vizName {
+    color: var(--primary-accent);
+    font-weight: bold;
+}
+#vizTitleContainer #vizFormulaHeader {
+    font-family: var(--font-code);
+    color: var(--text-color);
+    margin-left: 10px;
+}
+#vizTitleContainer #vizFormulaHeader .variable { /* Style variables in header */
+    color: var(--secondary-accent);
+    font-style: italic;
+}
+
+
+.main-container {
+    display: flex; /* Row layout */
+    flex-direction: row;
+    flex-wrap: wrap; /* Allow wrapping on smaller screens */
+    padding: 20px;
+    gap: 20px;
+}
+
+#controls {
+    flex: 1; /* Controls take 1 part */
+    min-width: 280px; /* Minimum width for controls */
+    max-width: 350px; /* Maximum width */
+    background-color: var(--controls-bg);
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    box-sizing: border-box;
+    /* Make controls scrollable if content overflows */
+    overflow-y: auto;
+    max-height: calc(100vh - 180px); /* Limit height, adjust as needed */
+}
+
+#canvasContainer {
+    flex: 3; /* Canvas takes 3 parts */
+    min-width: 400px;
+    min-height: 400px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: var(--canvas-bg); /* Black background */
+    border: 1px solid var(--canvas-border);
+    border-radius: 8px;
+    overflow: hidden;
+    box-sizing: border-box;
+}
+#canvasContainer canvas {
+    display: block;
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+
+/* ----- Typography & General Controls ----- */
+#controls h2 { color: var(--primary-accent); margin-top: 0; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; font-size: 1.5em; }
+h4 { color: var(--primary-accent); margin-top: 0; margin-bottom: 15px; font-size: 1.1em; }
+
+.control-group { margin-bottom: 18px; }
+.general-controls { border-bottom: 1px solid var(--border-color); padding-bottom: 15px; margin-bottom: 20px; }
+.general-controls:last-child { border-bottom: none; } /* Remove border from last general control */
+
+
+label { display: block; margin-bottom: 6px; font-weight: bold; color: var(--text-color); font-size: 0.95em; }
+label span { /* Value display */ font-weight: bold; font-style: normal; color: var(--secondary-accent); margin-left: 8px; background-color: var(--bg-color); padding: 2px 6px; border-radius: 3px; font-size: 0.9em; }
+select, input[type="range"], input[type="number"] { width: 100%; padding: 10px; box-sizing: border-box; border: 1px solid var(--border-color); border-radius: 4px; background-color: var(--bg-color); color: var(--text-color); font-size: 0.9em; margin-top: 2px; }
+select { appearance: none; background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23E0E0E0%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E'); background-repeat: no-repeat; background-position: right 10px top 50%; background-size: 10px auto; padding-right: 30px; }
+input[type="number"] { -moz-appearance: textfield; } /* Keep just in case */
+input[type="number"]::-webkit-outer-spin-button, input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+input[type="range"] { cursor: pointer; padding: 8px 0; appearance: none; background: transparent; }
+input[type="range"]::-webkit-slider-runnable-track { width: 100%; height: 6px; cursor: pointer; background: var(--border-color); border-radius: 3px; }
+input[type="range"]::-moz-range-track { width: 100%; height: 6px; cursor: pointer; background: var(--border-color); border-radius: 3px; }
+input[type="range"]::-webkit-slider-thumb { appearance: none; border: none; height: 18px; width: 18px; border-radius: 50%; background: var(--primary-accent); cursor: pointer; margin-top: -6px; /* Adjust vertical position */ box-shadow: 0 0 5px var(--primary-accent); }
+input[type="range"]::-moz-range-thumb { border: none; height: 18px; width: 18px; border-radius: 50%; background: var(--primary-accent); cursor: pointer; box-shadow: 0 0 5px var(--primary-accent); }
+button { padding: 10px 15px; font-size: 0.9em; font-weight: bold; color: var(--text-color); background-color: var(--primary-accent); border: none; border-radius: 5px; cursor: pointer; transition: background-color 0.2s ease; display: block; width: 100%; margin-top: 10px; }
+button:hover { background-color: #3dbbb1; }
+button:active { background-color: #2a9d8f; }
+
+/* ----- Specific Controls ----- */
+#specificControlsContainer { margin-top: 10px; }
+.viz-controls { display: none; padding: 15px; border: 1px dashed var(--border-color); border-radius: 6px; margin-top: 10px; background-color: rgba(0, 0, 0, 0.1); }
+.viz-controls.active { display: block; } /* Corrected: Show active one */
+
+.note { font-size: 0.9em; color: var(--note-color); font-style: italic; margin-top: 10px; }
+
+/* ----- Animation Controls ----- */
+.animation-controls { display: none; /* Hidden by default */ border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-bottom: 20px; }
+.animation-controls > div { display: flex; align-items: center; margin-bottom: 15px; }
+.animation-controls label { margin-bottom: 0; margin-left: 8px; font-weight: normal; color: var(--text-color); }
+.animation-controls .speed-control label { margin-left: 0; font-weight: bold; color: var(--text-color); }
+.animation-controls input[type="checkbox"] { width: auto; margin-top: 0; height: 16px; width: 16px; accent-color: var(--primary-accent); }
+.animation-controls input[type="range"] { margin-left: 10px; flex-grow: 1; }
+
+/* ----- Explanation Section ----- */
+.explanation-section { padding: 20px 30px; margin: 20px; background-color: var(--controls-bg); border-radius: 8px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3); color: var(--text-color); max-width: 900px; margin-left: auto; margin-right: auto; display: none; }
+.explanation-section h3 { color: var(--primary-accent); margin-top: 0; margin-bottom: 15px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; }
+.explanation-section p { margin-bottom: 1em; line-height: 1.7; }
+.explanation-section strong { color: var(--primary-accent); }
+.explanation-section code { font-family: var(--font-code); background-color: var(--formula-bg); padding: 2px 5px; border-radius: 3px; font-size: 0.95em; }
+.explanation-section .variable { font-family: var(--font-code); color: var(--secondary-accent); font-style: italic; font-weight: bold; }
