@@ -24,7 +24,9 @@
                     <option value="about" selected>-- Select or About --</option>
                     <option value="flower">Polar Flower (Rose)</option>
                     <option value="lorenz">Lorenz Attractor</option>
-                    <option value="lsystem">L-System Generator</option> </select>
+                    <option value="lissajous">Lissajous Curves</option>
+                    <option value="lsystem">L-System Generator</option>
+                </select>
             </div>
 
             <div class="control-group general-controls animation-controls" style="display: none;">
@@ -46,7 +48,7 @@
                 </div>
 
                 <div id="lorenzControls" class="viz-controls">
-                    <h4>Parameters</h4>
+                     <h4>Parameters</h4>
                      <div class="control-group"> <label for="lorenzSigma">&sigma;: <span id="lorenzSigmaVal">10.0</span></label> <input type="range" id="lorenzSigma" min="1" max="30" value="10" step="0.1"> </div>
                      <div class="control-group"> <label for="lorenzRho">&rho;: <span id="lorenzRhoVal">28.0</span></label> <input type="range" id="lorenzRho" min="1" max="50" value="28" step="0.1"> </div>
                      <div class="control-group"> <label for="lorenzBeta">&beta;: <span id="lorenzBetaVal">2.67</span></label> <input type="range" id="lorenzBeta" min="0.1" max="5" value="2.667" step="0.01"> </div>
@@ -56,32 +58,26 @@
                      <p class="note">(2D Projection Shown)</p>
                 </div>
 
-                <div id="lsystemControls" class="viz-controls">
+                <div id="lissajousControls" class="viz-controls">
                     <h4>Parameters</h4>
-                    <div class="control-group">
-                        <label for="lsystemPreset">Preset:</label>
-                        <select id="lsystemPreset">
-                            <option value="plant" selected>Fractal Plant</option>
-                            <option value="koch">Koch Snowflake</option>
-                            <option value="dragon">Dragon Curve</option>
-                            </select>
-                    </div>
-                    <div class="control-group">
-                        <label for="lsystemIterations">Iterations: <span id="lsystemIterationsVal">4</span></label>
-                        <input type="range" id="lsystemIterations" min="1" max="7" value="4" step="1">
-                    </div>
-                     <div class="control-group">
-                        <label for="lsystemAngle">Turn Angle (°): <span id="lsystemAngleVal">25</span></label>
-                        <input type="range" id="lsystemAngle" min="10" max="120" value="25" step="1">
-                    </div>
-                     <div class="control-group">
-                        <label for="lsystemStepLength">Segment Length: <span id="lsystemStepLengthVal">5</span></label>
-                        <input type="range" id="lsystemStepLength" min="1" max="20" value="5" step="1">
-                    </div>
-                    <div class="control-group">
-                         <button id="restartLSystemBtn">Regenerate / Restart Animation</button>
-                     </div>
-                     <p class="note">(Check 'Animate?' to see growth)</p>
+                    <div class="control-group"> <label for="lissajousA">X Amplitude (A): <span id="lissajousAVal">150</span></label> <input type="range" id="lissajousA" min="10" max="250" value="150" step="1"> </div>
+                    <div class="control-group"> <label for="lissajousB">Y Amplitude (B): <span id="lissajousBVal">150</span></label> <input type="range" id="lissajousB" min="10" max="250" value="150" step="1"> </div>
+                    <div class="control-group"> <label for="lissajousFreqA">X Frequency (a): <span id="lissajousFreqAVal">3</span></label> <input type="range" id="lissajousFreqA" min="1" max="12" value="3" step="1"> </div>
+                    <div class="control-group"> <label for="lissajousFreqB">Y Frequency (b): <span id="lissajousFreqBVal">2</span></label> <input type="range" id="lissajousFreqB" min="1" max="12" value="2" step="1"> </div>
+                    <div class="control-group"> <label for="lissajousDelta">Phase Shift (&delta;): <span id="lissajousDeltaVal">90</span>&deg;</label> <input type="range" id="lissajousDelta" min="0" max="360" value="90" step="1"> </div>
+                    <div class="control-group"> <label for="lissajousTrail">Trail Length: <span id="lissajousTrailVal">200</span></label> <input type="range" id="lissajousTrail" min="10" max="1000" value="200" step="10"> </div>
+                    <div class="control-group"> <label for="lissajousSize">Point Size: <span id="lissajousSizeVal">2</span></label> <input type="range" id="lissajousSize" min="1" max="10" value="2" step="1"> </div>
+                    <p class="note">(Check 'Animate?' box above to trace curve)</p>
+                </div>
+
+                 <div id="lsystemControls" class="viz-controls">
+                    <h4>Parameters</h4>
+                    <div class="control-group"> <label for="lsystemPreset">Preset:</label> <select id="lsystemPreset"><option value="plant" selected>Fractal Plant</option><option value="koch">Koch Snowflake</option><option value="dragon">Dragon Curve</option></select> </div>
+                    <div class="control-group"> <label for="lsystemIterations">Iterations: <span id="lsystemIterationsVal">4</span></label> <input type="range" id="lsystemIterations" min="1" max="7" value="4" step="1"> </div>
+                    <div class="control-group"> <label for="lsystemAngle">Turn Angle (°): <span id="lsystemAngleVal">25</span></label> <input type="range" id="lsystemAngle" min="10" max="120" value="25" step="1"> </div>
+                    <div class="control-group"> <label for="lsystemStepLength">Segment Length: <span id="lsystemStepLengthVal">5</span></label> <input type="range" id="lsystemStepLength" min="1" max="20" value="5" step="1"> </div>
+                    <div class="control-group"> <button id="restartLSystemBtn">Regenerate / Restart Animation</button> </div>
+                    <p class="note">(Check 'Animate?' to see growth)</p>
                 </div>
 
             </div> </div> <div id="canvasContainer"> </div>
