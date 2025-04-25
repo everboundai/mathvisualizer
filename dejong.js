@@ -4,7 +4,7 @@ export default class DeJongVisualization {
         this.controls = controlsElement;
         console.log("DeJongVisualization constructor called.");
 
-        // Default parameters for reset
+        // Defaults for reset
         this.defaultA = 1.4;
         this.defaultB = -2.3;
         this.defaultC = 2.4;
@@ -12,7 +12,7 @@ export default class DeJongVisualization {
         this.defaultNumPoints = 10000;
         this.defaultSkipPoints = 1000;
 
-        // Grab control elements
+        // Grab UI controls
         this.sliderA = p.select('#dejongA', this.controls?.elt);
         this.valA    = p.select('#dejongAVal', this.controls?.elt);
         this.sliderB = p.select('#dejongB', this.controls?.elt);
@@ -25,7 +25,7 @@ export default class DeJongVisualization {
         this.valPoints    = p.select('#dejongPointsVal', this.controls?.elt);
         this.resetBtn     = p.select('#resetDeJongBtn', this.controls?.elt);
 
-        // Initialize state from sliders (or defaults)
+        // Initialize state from sliders or defaults
         this.a         = this.sliderA      ? parseFloat(this.sliderA.value())      : this.defaultA;
         this.b         = this.sliderB      ? parseFloat(this.sliderB.value())      : this.defaultB;
         this.c         = this.sliderC      ? parseFloat(this.sliderC.value())      : this.defaultC;
@@ -39,17 +39,15 @@ export default class DeJongVisualization {
         this.buffer = null;
         this.needsRecalculation = true;
 
-        // Attach listeners
+        // Attach event listeners
         this.addListener(this.sliderA, 'input', this.updateParams);
         this.addListener(this.sliderB, 'input', this.updateParams);
         this.addListener(this.sliderC, 'input', this.updateParams);
         this.addListener(this.sliderD, 'input', this.updateParams);
         this.addListener(this.sliderPoints, 'input', this.updateParams);
-        if (this.resetBtn) {
-            this.resetBtn.mousePressed(() => this.resetDefaults());
-        }
+        if (this.resetBtn) this.resetBtn.mousePressed(() => this.resetDefaults());
 
-        // Create offscreen buffer
+        // Offscreen buffer
         this.buffer = p.createGraphics(p.width, p.height);
         this.buffer.colorMode(p.HSB, 360, 100, 100, 1);
 
@@ -58,9 +56,7 @@ export default class DeJongVisualization {
     }
 
     addListener(element, eventType, handler) {
-        if (element) {
-            element[eventType](() => handler.call(this));
-        }
+        if (element) element[eventType](() => handler.call(this));
     }
 
     updateControlsFromState() {
@@ -79,11 +75,11 @@ export default class DeJongVisualization {
 
     updateParams() {
         let changed = false;
-        let newA = this.sliderA      ? parseFloat(this.sliderA.value())      : this.a;
-        let newB = this.sliderB      ? parseFloat(this.sliderB.value())      : this.b;
-        let newC = this.sliderC      ? parseFloat(this.sliderC.value())      : this.c;
-        let newD = this.sliderD      ? parseFloat(this.sliderD.value())      : this.d;
-        let newNum = this.sliderPoints ? parseInt(this.sliderPoints.value())     : this.numPoints;
+        const newA   = this.sliderA      ? parseFloat(this.sliderA.value())      : this.a;
+        const newB   = this.sliderB      ? parseFloat(this.sliderB.value())      : this.b;
+        const newC   = this.sliderC      ? parseFloat(this.sliderC.value())      : this.c;
+        const newD   = this.sliderD      ? parseFloat(this.sliderD.value())      : this.d;
+        const newNum = this.sliderPoints ? parseInt(this.sliderPoints.value())     : this.numPoints;
 
         if (newA !== this.a || newB !== this.b || newC !== this.c || newD !== this.d) {
             this.a = newA; this.b = newB; this.c = newC; this.d = newD;
@@ -120,10 +116,7 @@ export default class DeJongVisualization {
 
     recalculate() {
         if (!this.needsRecalculation) return;
-        console.log(`Recalculating De Jong for ${this.numPoints} points...`);
         const p = this.p;
-
-        // Generate points
         let x = 0.1, y = 0.1;
         let minX = Infinity, maxX = -Infinity;
         let minY = Infinity, maxY = -Infinity;
@@ -135,29 +128,30 @@ export default class DeJongVisualization {
             y = p.sin(this.c * px) - p.cos(this.d * py);
             if (i >= this.skipPoints) {
                 this.points.push([x, y]);
-                minX = Math.min(minX, x);
-                maxX = Math.max(maxX, x);
-                minY = Math.min(minY, y);
-                maxY = Math.max(maxY, y);
+                if (x < minX) minX = x;
+                if (x > maxX) maxX = x;
+                if (y < minY) minY = y;
+                if (y > maxY) maxY = y;
             }
         }
 
-        // Handle degenerate
-        if (minX === Infinity) { minX=-2; maxX=2; minY=-2; maxY=2; }
+        if (minX === Infinity) { minX = -2; maxX = 2; minY = -2; maxY = 2; }
         else {
             if (maxX === minX) maxX += 1e-6;
             if (maxY === minY) maxY += 1e-6;
         }
         this.bounds = { minX, maxX, minY, maxY };
 
-        // Dynamic scaling
+        // Dynamic scaling with guard
         const pad = 0.90;
         const rangeX = maxX - minX;
         const rangeY = maxY - minY;
-        const safeX = rangeX || 1e-6;
-        const safeY = rangeY || 1e-6;
-        const scaleX = p.width  * pad / safeX;
-        const scaleY = p.height * pad / safeY;
+        const typical = 4.5;
+        const minRange = 0.01;
+        const effX = rangeX < minRange ? typical : rangeX;
+        const effY = rangeY < minRange ? typical : rangeY;
+        const scaleX = p.width  * pad / effX;
+        const scaleY = p.height * pad / effY;
         this.scaleFactor = Math.min(scaleX, scaleY);
 
         // Draw into buffer
@@ -169,15 +163,15 @@ export default class DeJongVisualization {
         this.buffer.push();
         const cx = (minX + maxX) / 2;
         const cy = (minY + maxY) / 2;
-        this.buffer.translate(this.buffer.width/2, this.buffer.height/2);
+        this.buffer.translate(this.buffer.width / 2, this.buffer.height / 2);
         this.buffer.scale(this.scaleFactor);
         this.buffer.translate(-cx, -cy);
         this.buffer.strokeWeight(2);
 
-        for (let [px, py] of this.points) {
-            const hue = p.map(px, minX, maxX, 180, 360) + (p.frameCount * 0.1);
+        for (const [px, py] of this.points) {
+            const hue = (p.map(px, minX, maxX, 180, 360) + p.frameCount * 0.1) % 360;
             const bright = p.map(py, minY, maxY, 60, 100);
-            this.buffer.stroke(hue % 360, 80, bright, 0.7);
+            this.buffer.stroke(hue, 80, bright, 0.7);
             this.buffer.point(px, py);
         }
         this.buffer.pop();
@@ -186,14 +180,13 @@ export default class DeJongVisualization {
     }
 
     draw(sharedState) {
-        const p = this.p;
         if (this.needsRecalculation) this.recalculate();
-        if (this.buffer) p.image(this.buffer, 0, 0);
+        if (this.buffer) this.p.image(this.buffer, 0, 0);
     }
 
     getDisplayName() { return "De Jong Attractor"; }
     getFormula()     { return `x_n = sin(a·y_{n-1}) - cos(b·x_{n-1})<br/>y_n = sin(c·x_{n-1}) - cos(d·y_{n-1})`; }
-    getExplanation() { return `<h3>De Jong Attractor</h3>`; }
+    getExplanation() { return `<h3>De Jong Attractor</h3><p>...</p>`; }
     isAnimatable()   { return false; }
 
     activate() {
