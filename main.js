@@ -3,7 +3,7 @@
 // Import visualization modules
 import FlowerVisualization from './flower.js';
 import LorenzVisualization from './lorenz.js';
-import LSystemVisualization from './lsystem.js'; // Import the simplified version
+// import LSystemVisualization from './lsystem.js'; // Removed L-System import
 import LissajousVisualization from './lissajous.js';
 
 const sketch = (p) => {
@@ -59,7 +59,7 @@ const sketch = (p) => {
              visualizations['flower'] = new FlowerVisualization(p, p.select('#flowerControls'));
              visualizations['lorenz'] = new LorenzVisualization(p, p.select('#lorenzControls'));
              visualizations['lissajous'] = new LissajousVisualization(p, p.select('#lissajousControls'));
-             visualizations['lsystem'] = new LSystemVisualization(p, p.select('#lsystemControls')); // Instantiates the simplified version
+             // visualizations['lsystem'] = new LSystemVisualization(p, p.select('#lsystemControls')); // Removed L-System instantiation
              console.log("Visualization modules instantiated:", Object.keys(visualizations));
         } catch (e) {
              console.error("Error instantiating visualization modules:", e);
@@ -86,6 +86,11 @@ const sketch = (p) => {
 
         // Initial UI setup
         currentVizKey = vizSelect.value();
+        if (!visualizations[currentVizKey] && currentVizKey !== 'about') {
+            // If the initially selected value is no longer valid (e.g., was lsystem), default to 'about'
+            currentVizKey = 'about';
+            if (vizSelect) vizSelect.value(currentVizKey);
+        }
         updateGeneralParams();
         visualizationChanged(); // Setup UI based on initial dropdown value
 
@@ -101,11 +106,10 @@ const sketch = (p) => {
 
         if (activeViz?.draw) {
             // Apply centering ONLY for visualizations that need it
-            // Exclude lsystem as the simplified version should draw relative to its own origin
             const needsCentering = (
                 currentVizKey === 'flower' ||
                 currentVizKey === 'lissajous'
-                 // L-System removed from this list
+                 // L-System was already removed from this list
             );
 
             if (needsCentering) {
@@ -131,12 +135,13 @@ const sketch = (p) => {
             p.text("Select a visualization from the Controls panel.", p.width / 2, p.height / 2);
             p.pop();
         } else if (currentVizKey && currentVizKey !== 'about') {
-             console.warn("Draw condition failed for:", currentVizKey);
+             // This case might now happen if dropdown somehow has an invalid value
+             console.warn("Draw condition failed for unrecognized key:", currentVizKey);
              p.push();
              p.fill(0, 100, 80); // Warning color (Red)
              p.textAlign(p.CENTER, p.CENTER);
              p.textSize(18);
-             p.text(`Error: Viz "${currentVizKey}" failed to load or draw. Check console.`, p.width / 2, p.height / 2);
+             p.text(`Error: Viz "${currentVizKey}" not found or failed to load. Check console.`, p.width / 2, p.height / 2);
              p.pop();
         }
     };
@@ -159,7 +164,7 @@ const sketch = (p) => {
         currentVizKey = vizSelect.value();
         console.log("Viz Changed:", currentVizKey);
 
-        const activeViz = visualizations[currentVizKey];
+        const activeViz = visualizations[currentVizKey]; // Get the specific viz object
 
         let displayName = "Unknown";
         let formulaHTML = "";
@@ -171,8 +176,9 @@ const sketch = (p) => {
             formulaHTML = "Select a visualization...";
             explanationHTML = "<p>Created by Joshua Prull, 2025. Select a visualization to explore interactive math concepts. Use the controls to adjust parameters.</p>";
         } else if (activeViz) {
+            // Fetch details directly from the module instance
             try {
-                displayName = typeof activeViz.getDisplayName === 'function' ? activeViz.getDisplayName() : (vizDisplayNames[currentVizKey] || "Unknown");
+                displayName = typeof activeViz.getDisplayName === 'function' ? activeViz.getDisplayName() : "Unknown"; // Removed fallback to map
                 formulaHTML = typeof activeViz.getFormula === 'function' ? activeViz.getFormula() : "";
                 explanationHTML = typeof activeViz.getExplanation === 'function' ? activeViz.getExplanation() : "<p>No explanation available.</p>";
                 showAnimControls = typeof activeViz.isAnimatable === 'function' ? activeViz.isAnimatable() : false;
@@ -180,10 +186,12 @@ const sketch = (p) => {
                 console.error(`Error getting details from module ${currentVizKey}:`, e);
             }
         } else {
-             displayName = vizDisplayNames[currentVizKey] || currentVizKey;
+             // Handle case where the key is not 'about' and viz not found (shouldn't happen now)
+             displayName = currentVizKey;
              formulaHTML = "Error loading formula.";
              explanationHTML = `<p>Failed to load the '${displayName}' visualization module. Check console.</p>`;
         }
+
 
         // Update Header
         if (vizNameSpan) vizNameSpan.html(displayName);
@@ -228,6 +236,7 @@ const sketch = (p) => {
                      }
                  }
              } else {
+                 // Fallback logic (less likely needed now)
                  console.warn(`!!! Control div reference not found in '${currentVizKey}' object. Trying ID fallback.`);
                  const fallbackControl = p.select('#' + currentVizKey + 'Controls');
                  if (fallbackControl) {
@@ -241,9 +250,11 @@ const sketch = (p) => {
         } else if (currentVizKey === 'about') {
             console.log("Hiding all specific controls for 'about'.");
         } else {
-            console.warn(`Skipping control activation for '${currentVizKey}' (module missing).`);
+            // This case should ideally not be reached if dropdown is clean
+            console.warn(`Skipping control activation for '${currentVizKey}' (module missing or key invalid).`);
         }
         console.log("--- Finished Activating Controls ---");
+
 
         // Safeguard calls to sync UI state after activation
         if (activeViz) {
