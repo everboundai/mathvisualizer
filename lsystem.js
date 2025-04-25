@@ -1,4 +1,4 @@
-// lsystem.js - Module for L-System Visualization with Auto-Scaling (Attempt 3)
+// lsystem.js - Module for L-System Visualization (Simplified for Diagnostics)
 
 // Helper for presets
 const presets = {
@@ -9,17 +9,19 @@ const presets = {
 
 export default class LSystemVisualization {
     constructor(p, controlsElement) {
-        // ... constructor setup as before ...
-        console.log("LSystemVisualization constructor called.");
+        console.log("LSystemVisualization constructor called (Simplified).");
         this.p = p;
         this.controls = controlsElement;
         if (!this.controls) console.error("LSystem controls div not passed correctly!");
-        this.ruleSetKey = 'plant'; this.iterations = 4; this.angle = presets[this.ruleSetKey].angle;
-        this.stepLength = 5; this.lstring = ""; this.needsGeneration = true; this.currentIndex = 0;
-        this.bounds = { minX: 0, maxX: 0, minY: 0, maxY: 0, calculated: false };
-        this.scaleFactor = 1.0;
-        // No longer need offsetX/Y stored if we calculate center dynamically
-        // this.offsetX = 0; this.offsetY = 0;
+
+        // State
+        this.ruleSetKey = 'plant';
+        this.iterations = 4;
+        this.angle = presets[this.ruleSetKey].angle;
+        this.stepLength = 5; // Use direct step length
+        this.lstring = "";
+        this.needsGeneration = true;
+        this.currentIndex = 0;
 
         // Get specific controls... (as before)
         this.presetSelect = p.select('#lsystemPreset', this.controls?.elt);
@@ -40,107 +42,85 @@ export default class LSystemVisualization {
 
         // Initial setup
         this.updateControls();
-        this.generateAndCalculateBounds();
+        this.generate(); // Just generate, no bounds calculation
     }
 
     addListener(element, eventType, handler) { /* ... as before ... */ }
-    updateParams() { /* ... as before ... */
-        let presetChanged = false; let needsRegen = false; let logReason = "";
-        if (this.presetSelect) { let newPresetKey = this.presetSelect.value(); if (newPresetKey !== this.ruleSetKey && presets[newPresetKey]) { this.ruleSetKey = newPresetKey; this.angle = presets[this.ruleSetKey].angle; presetChanged = true; needsRegen = true; logReason += "Preset changed. "; } }
-        if (this.iterationsSlider) { let newIterations = parseInt(this.iterationsSlider.value()); if (newIterations !== this.iterations) { this.iterations = newIterations; needsRegen = true; logReason += "Iterations changed. ";} if (this.iterationsValSpan) this.iterationsValSpan.html(this.iterations); }
-        if (this.angleSlider) { if (presetChanged) { this.angleSlider.value(this.angle); } let newAngle = parseFloat(this.angleSlider.value()); if (newAngle !== this.angle) { this.angle = newAngle; needsRegen = true; logReason += "Angle changed. ";} if (this.angleValSpan) this.angleValSpan.html(this.angle.toFixed(0)); }
-        if (this.stepLengthSlider) { let newLength = parseFloat(this.stepLengthSlider.value()); if (newLength !== this.stepLength) { this.stepLength = newLength; needsRegen = true; logReason += "Length changed. ";} if (this.stepLengthValSpan) this.stepLengthValSpan.html(this.stepLength.toFixed(0)); }
-        if (needsRegen) { console.log("Flagging regen & bounds calc due to:", logReason); this.needsGeneration = true; this.resetAnimation(); this.p.redraw(); }
+
+    updateParams() {
+        let presetChanged = false;
+        let needsRegen = false;
+        let logReason = "";
+
+        // Read controls and set needsGeneration flag if geometry changes
+        if (this.presetSelect) { let key = this.presetSelect.value(); if (key !== this.ruleSetKey && presets[key]) { this.ruleSetKey = key; this.angle = presets[key].angle; presetChanged = true; needsRegen = true; logReason += "Preset. "; } }
+        if (this.iterationsSlider) { let iter = parseInt(this.iterationsSlider.value()); if (iter !== this.iterations) { this.iterations = iter; needsRegen = true; logReason += "Iter. "; } if (this.iterationsValSpan) this.iterationsValSpan.html(this.iterations); }
+        if (this.angleSlider) { if (presetChanged) { this.angleSlider.value(this.angle); } let ang = parseFloat(this.angleSlider.value()); if (ang !== this.angle) { this.angle = ang; needsRegen = false; /* Angle change alone redraws */ } if (this.angleValSpan) this.angleValSpan.html(this.angle.toFixed(0)); }
+        if (this.stepLengthSlider) { let len = parseFloat(this.stepLengthSlider.value()); if (len !== this.stepLength) { this.stepLength = len; needsRegen = false; /* Length change alone redraws */ } if (this.stepLengthValSpan) this.stepLengthValSpan.html(this.stepLength.toFixed(0)); }
+
+        if (needsRegen) {
+            console.log("Flagging generation due to:", logReason);
+            this.needsGeneration = true;
+            this.resetAnimation();
+        }
+        // Always redraw if params change in any way
+        this.p.redraw();
     }
+
     updateControls() { /* ... as before ... */ }
     restart() { /* ... as before ... */ }
     resetAnimation() { this.currentIndex = 0; }
 
-    generateAndCalculateBounds() { /* ... as before, calls generate() then calculateBounds() ... */
-        if (!this.needsGeneration) { console.log("Skipping generation/bounds calc - not needed."); return; }
-        console.log("--- Starting Generation & Bounds Calculation ---");
-        this.generate(); this.calculateBounds();
-        this.needsGeneration = false; this.resetAnimation();
-        console.log("--- Finished Generation & Bounds Calculation ---");
+    // Only generates the string, no bounds calculation
+    generate() {
+        if (!this.needsGeneration) return;
+        console.log("--- Generating L-System String Only ---");
+        const ruleset = presets[this.ruleSetKey];
+        if (!ruleset) { console.error("Invalid L-System preset key:", this.ruleSetKey); this.lstring = ""; this.needsGeneration = false; return; }
+        this.lstring = ruleset.axiom;
+        try { /* ... generation loop as before ... */
+            for (let i = 0; i < this.iterations; i++) {
+                let nextString = ""; for (let char of this.lstring) { nextString += ruleset.rules[char] || char; }
+                this.lstring = nextString;
+                if (this.lstring.length > 300000) { console.warn(`L-System string limit exceeded.`); this.iterations = i + 1; this.updateControls(); break; }
+            }
+        } catch (e) { console.error("Error generating L-System string:", e); this.lstring = ruleset.axiom; }
+        console.log("--- Finished Generation ---");
+        this.needsGeneration = false;
+        this.resetAnimation();
     }
 
-    generate() { /* ... string generation logic as before ... */ }
-
-    calculateBounds() { /* ... bounds calculation logic as before, stores result in this.bounds ... */
-        // Ensures this.bounds = { minX, maxX, minY, maxY, calculated: true } is set
-        // And this.scaleFactor is calculated
-        console.log("Calculating bounds with angle:", this.angle, "length:", this.stepLength);
-        const p = this.p; let x = 0, y = 0; let currentAngle = presets[this.ruleSetKey]?.startAngle || 0;
-        let minX = 0, maxX = 0, minY = 0, maxY = 0; const stack = [];
-        const commands = this.lstring;
-        if (!commands) { console.warn("Cannot calculate bounds: L-string is empty."); this.bounds = { minX: 0, maxX: 1, minY: 0, maxY: 1, calculated: true }; return; }
-        minX = Math.min(minX, x); maxX = Math.max(maxX, x); minY = Math.min(minY, y); maxY = Math.max(maxY, y); // Include 0,0
-
-        for (let i = 0; i < commands.length; i++) {
-            const cmd = commands[i];
-            if (cmd === 'F' || cmd === 'G') {
-                const dx = this.stepLength * p.cos(currentAngle); const dy = this.stepLength * p.sin(currentAngle); // Uses degrees
-                x += dx; y += dy; minX = Math.min(minX, x); maxX = Math.max(maxX, x); minY = Math.min(minY, y); maxY = Math.max(maxY, y);
-            } else if (cmd === '+') { currentAngle -= this.angle; }
-            else if (cmd === '-') { currentAngle += this.angle; }
-            else if (cmd === '[') { stack.push({ x, y, angle: currentAngle }); }
-            else if (cmd === ']') { if (stack.length > 0) { const state = stack.pop(); x = state.x; y = state.y; currentAngle = state.angle; } }
-        }
-        if (maxX === minX) maxX += 1e-6; if (maxY === minY) maxY += 1e-6; // Avoid zero dimensions
-        this.bounds = { minX, maxX, minY, maxY, calculated: true }; console.log("Bounds calculated:", this.bounds);
-
-        // Calculate Scale Factor
-        const boundsWidth = this.bounds.maxX - this.bounds.minX; const boundsHeight = this.bounds.maxY - this.bounds.minY;
-        const padding = 0.90;
-        if (boundsWidth <= 0 || boundsHeight <= 0 || !isFinite(boundsWidth) || !isFinite(boundsHeight)) { this.scaleFactor = 1; }
-        else { let scaleX = (p.width * padding) / boundsWidth; let scaleY = (p.height * padding) / boundsHeight; this.scaleFactor = Math.min(scaleX, scaleY); }
-        if (!isFinite(this.scaleFactor) || this.scaleFactor <= 0) { console.warn("Invalid scale factor calculated. Defaulting to 1."); this.scaleFactor = 1; }
-        console.log(`Scale Factor: ${this.scaleFactor.toFixed(3)}`);
-        // Note: We calculate offsetX/Y dynamically in draw() now based on bounds center
-    }
-
+    // Removed calculateBounds()
 
     draw(sharedState) {
         const p = this.p;
 
-        if (this.needsGeneration) { this.generateAndCalculateBounds(); }
-        if (!this.lstring || !this.bounds.calculated) { /* ... loading text ... */ return; }
+        if (this.needsGeneration) { this.generate(); } // Generate if needed
+        if (!this.lstring) { /* ... loading text ... */ return; }
 
-        // --- Drawing Logic with Corrected Scaling ---
-        p.push();
+        // --- Drawing Logic (Simplified - No Scaling/Offset) ---
+        p.push(); // Isolate transforms
 
-        // Calculate center of the *calculated* bounds
-        const centerX = (this.bounds.minX + this.bounds.maxX) / 2;
-        const centerY = (this.bounds.minY + this.bounds.maxY) / 2;
-
-        // *** Corrected Transformation Order ***
-        // 1. Translate canvas origin to center
-        p.translate(p.width / 2, p.height / 2);
-        // 2. Apply calculated scale factor
-        p.scale(this.scaleFactor);
-        // 3. Translate the coordinate system so the center of the bounds is at the origin
-        p.translate(-centerX, -centerY);
-        // 4. Apply the initial rotation for the preset
+        // Apply the initial rotation for the preset
+        // This happens *after* the main translate(w/2, h/2) applied by main.js
         let startAngle = presets[this.ruleSetKey]?.startAngle || 0;
         p.rotate(startAngle); // Assuming angleMode DEGREES
 
-
-        // Set drawing style - Constant stroke weight
-        p.stroke(120, 80, 90);
-        p.strokeWeight(1.5);
-
+        // Set drawing style
+        p.stroke(120, 80, 90); // Green
+        p.strokeWeight(1.5); // Constant weight
 
         // Determine how much to draw (Animation logic)
         const commands = this.lstring;
         let commandsToProcess = commands.length;
-        if (sharedState.animate) {
-            let stepsPerFrame = Math.ceil(sharedState.speed * (1 + Math.log10(Math.max(1, commands.length))));
-            stepsPerFrame = Math.max(1, Math.min(500, stepsPerFrame));
-            this.currentIndex = Math.min(this.currentIndex + stepsPerFrame, commands.length);
-            commandsToProcess = this.currentIndex;
+        if (sharedState.animate) { /* ... animation index calculation as before ... */
+             let stepsPerFrame = Math.ceil(sharedState.speed * (1 + Math.log10(Math.max(1, commands.length))));
+             stepsPerFrame = Math.max(1, Math.min(500, stepsPerFrame));
+             this.currentIndex = Math.min(this.currentIndex + stepsPerFrame, commands.length);
+             commandsToProcess = this.currentIndex;
         }
 
-        // Draw path from start up to commandsToProcess
+        // Draw path from start up to commandsToProcess using simple turtle commands
         for (let i = 0; i < commandsToProcess; i++) {
             const cmd = commands[i];
             if (cmd === 'F') { p.line(0, 0, this.stepLength, 0); p.translate(this.stepLength, 0); }
@@ -151,7 +131,7 @@ export default class LSystemVisualization {
             else if (cmd === ']') { p.pop(); }
         }
 
-        p.pop(); // Restore initial drawing state
+        p.pop(); // Restore initial drawing state (before this module's rotate)
     }
 
     // --- Interface Methods ---
