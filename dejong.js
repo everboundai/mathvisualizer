@@ -142,17 +142,15 @@ export default class DeJongVisualization {
         }
         this.bounds = { minX, maxX, minY, maxY };
 
-        // Dynamic scaling with guard
+                // Dynamic scaling based purely on computed bounds
         const pad = 0.90;
-        const rangeX = maxX - minX;
-        const rangeY = maxY - minY;
-        const typical = 4.5;
-        const minRange = 0.01;
-        const effX = rangeX < minRange ? typical : rangeX;
-        const effY = rangeY < minRange ? typical : rangeY;
-        const scaleX = p.width  * pad / effX;
-        const scaleY = p.height * pad / effY;
+        // Compute ranges, default to 1 if degenerate
+        const rangeX = this.bounds.maxX - this.bounds.minX || 1;
+        const rangeY = this.bounds.maxY - this.bounds.minY || 1;
+        const scaleX = p.width  * pad / rangeX;
+        const scaleY = p.height * pad / rangeY;
         this.scaleFactor = Math.min(scaleX, scaleY);
+        console.log(`Scale Factor: ${this.scaleFactor.toFixed(3)} (rangeX=${rangeX.toFixed(3)}, rangeY=${rangeY.toFixed(3)})`);(scaleX, scaleY);
 
         // Draw into buffer
         if (!this.buffer || this.buffer.width !== p.width || this.buffer.height !== p.height) {
