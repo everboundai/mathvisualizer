@@ -1,5 +1,3 @@
-# Creates the updated lsystem.js file with corrected animation logic
-lsystem_js_content = r"""
 // lsystem.js - Module for L-System Visualization
 
 // Helper for presets (Assume presets object is correctly defined above this)
@@ -246,12 +244,3 @@ export default class LSystemVisualization {
     }
 
 } // End class LSystemVisualization
-"""
-
-# Create the file
-try:
-    with open("lsystem.js", "w") as f:
-        f.write(lsystem_js_content)
-    print("File 'lsystem.js' created successfully.")
-except Exception as e:
-    print(f"Error creating file 'lsystem.js': {e}")
