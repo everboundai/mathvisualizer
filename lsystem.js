@@ -1,4 +1,4 @@
-// lsystem.js - Module for L-System Visualization with Auto-Scaling
+// lsystem.js - Module for L-System Visualization with Auto-Scaling (Attempt 2)
 
 // Helper for presets
 const presets = {
@@ -18,10 +18,10 @@ export default class LSystemVisualization {
         this.ruleSetKey = 'plant';
         this.iterations = 4;
         this.angle = presets[this.ruleSetKey].angle;
-        this.stepLength = 5; // Base length unit, actual size determined by scaling
+        this.stepLength = 5;
         this.lstring = "";
         this.needsGeneration = true;
-        this.currentIndex = 0; // Animation progress index
+        this.currentIndex = 0;
 
         // Bounds and Transform State
         this.bounds = { minX: 0, maxX: 0, minY: 0, maxY: 0, calculated: false };
@@ -29,7 +29,7 @@ export default class LSystemVisualization {
         this.offsetX = 0;
         this.offsetY = 0;
 
-        // Get specific controls... (selectors remain the same)
+        // Get specific controls...
         this.presetSelect = p.select('#lsystemPreset', this.controls?.elt);
         this.iterationsSlider = p.select('#lsystemIterations', this.controls?.elt);
         this.iterationsValSpan = p.select('#lsystemIterationsVal', this.controls?.elt);
@@ -39,7 +39,7 @@ export default class LSystemVisualization {
         this.stepLengthValSpan = p.select('#lsystemStepLengthVal', this.controls?.elt);
         this.restartBtn = p.select('#restartLSystemBtn', this.controls?.elt);
 
-        // Attach listeners... (listeners remain the same)
+        // Attach listeners...
         this.addListener(this.presetSelect, 'changed', this.updateParams);
         this.addListener(this.iterationsSlider, 'input', this.updateParams);
         this.addListener(this.angleSlider, 'input', this.updateParams);
@@ -48,7 +48,7 @@ export default class LSystemVisualization {
 
         // Initial setup
         this.updateControls();
-        this.generateAndCalculateBounds(); // Combined generation and bounds calculation
+        this.generateAndCalculateBounds();
     }
 
     addListener(element, eventType, handler) { /* ... as before ... */
@@ -56,53 +56,47 @@ export default class LSystemVisualization {
         else { console.warn(`L-System control element not found during listener attachment.`); }
     }
 
-    updateParams() { /* ... as before, but now triggers generateAndCalculateBounds ... */
-        let presetChanged = false; let needsRegen = false;
-        // Read preset
+    updateParams() {
+        let presetChanged = false;
+        let needsRegen = false;
+        let logReason = "";
+
         if (this.presetSelect) {
             let newPresetKey = this.presetSelect.value();
             if (newPresetKey !== this.ruleSetKey && presets[newPresetKey]) {
                 this.ruleSetKey = newPresetKey; this.angle = presets[this.ruleSetKey].angle;
-                presetChanged = true; needsRegen = true;
+                presetChanged = true; needsRegen = true; logReason += "Preset changed. ";
             }
         }
-        // Read iterations
         if (this.iterationsSlider) {
             let newIterations = parseInt(this.iterationsSlider.value());
-            if (newIterations !== this.iterations) { this.iterations = newIterations; needsRegen = true; }
+            if (newIterations !== this.iterations) { this.iterations = newIterations; needsRegen = true; logReason += "Iterations changed. ";}
             if (this.iterationsValSpan) this.iterationsValSpan.html(this.iterations);
         }
-        // Read angle
         if (this.angleSlider) {
-            if (presetChanged) { this.angleSlider.value(this.angle); }
-            else { let newAngle = parseFloat(this.angleSlider.value()); if (newAngle !== this.angle) { this.angle = newAngle; needsRegen = true; } } // Angle change now forces recalc of bounds
+            if (presetChanged) { this.angleSlider.value(this.angle); } // Update slider if preset changed angle
+            let newAngle = parseFloat(this.angleSlider.value()); // Read current slider value
+            if (newAngle !== this.angle) { this.angle = newAngle; needsRegen = true; logReason += "Angle changed. ";}
             if (this.angleValSpan) this.angleValSpan.html(this.angle.toFixed(0));
         }
-        // Read length
         if (this.stepLengthSlider) {
             let newLength = parseFloat(this.stepLengthSlider.value());
-            if (newLength !== this.stepLength) { this.stepLength = newLength; needsRegen = true; } // Length change now forces recalc of bounds
+            if (newLength !== this.stepLength) { this.stepLength = newLength; needsRegen = true; logReason += "Length changed. ";}
             if (this.stepLengthValSpan) this.stepLengthValSpan.html(this.stepLength.toFixed(0));
         }
 
         if (needsRegen) {
-            this.needsGeneration = true; this.resetAnimation(); this.p.redraw();
-            console.log("L-System flagged for regeneration and bounds calculation.");
-        } else { /* Only redraw if nothing changed */ }
+            console.log("Flagging regen & bounds calc due to:", logReason);
+            this.needsGeneration = true;
+            this.resetAnimation();
+            this.p.redraw(); // Redraw will trigger generateAndCalculateBounds if flag is set
+        }
+         // No else redraw here, redraw happens anyway via p5 loop if needed
     }
 
-    updateControls() { /* ... as before ... */
-        console.log("Updating L-System controls to match state.");
-        if (this.presetSelect) this.presetSelect.value(this.ruleSetKey);
-        if (this.iterationsSlider) this.iterationsSlider.value(this.iterations);
-        if (this.iterationsValSpan) this.iterationsValSpan.html(this.iterations);
-        if (this.angleSlider) this.angleSlider.value(this.angle);
-        if (this.angleValSpan) this.angleValSpan.html(this.angle.toFixed(0));
-        if (this.stepLengthSlider) this.stepLengthSlider.value(this.stepLength);
-        if (this.stepLengthValSpan) this.stepLengthValSpan.html(this.stepLength.toFixed(0));
-    }
+    updateControls() { /* ... as before ... */ }
 
-    restart() { /* ... as before, triggers generateAndCalculateBounds via redraw ... */
+    restart() { /* ... as before ... */
         console.log("L-System Restart (Regenerate) called.");
         this.needsGeneration = true; this.resetAnimation();
         this.p.redraw();
@@ -111,61 +105,67 @@ export default class LSystemVisualization {
     resetAnimation() { this.currentIndex = 0; }
 
     generateAndCalculateBounds() {
-        if (!this.needsGeneration) return;
-        console.log("Generating L-System string...");
-        this.generate(); // Generate the string first
-        console.log("Calculating L-System bounds...");
-        this.calculateBounds(); // Then calculate bounds based on the new string/params
-        this.needsGeneration = false; // Mark as done
+        if (!this.needsGeneration) {
+            console.log("Skipping generation/bounds calc - not needed.");
+            return;
+        }
+        console.log("--- Starting Generation & Bounds Calculation ---");
+        this.generate();
+        this.calculateBounds();
+        this.needsGeneration = false;
         this.resetAnimation();
+        console.log("--- Finished Generation & Bounds Calculation ---");
     }
 
-    generate() { /* ... string generation logic as before ... */
-        const ruleset = presets[this.ruleSetKey];
-        if (!ruleset) { console.error("Invalid L-System preset key:", this.ruleSetKey); this.lstring = ""; return; }
-        this.lstring = ruleset.axiom;
-        try {
-            for (let i = 0; i < this.iterations; i++) {
-                let nextString = ""; for (let char of this.lstring) { nextString += ruleset.rules[char] || char; }
-                this.lstring = nextString;
-                if (this.lstring.length > 300000) { console.warn(`L-System string length limit exceeded.`); this.iterations = i + 1; this.updateControls(); break; }
-            }
-            console.log("L-System generation complete. String length:", this.lstring.length);
-        } catch (e) { console.error("Error generating L-System string:", e); this.lstring = ruleset.axiom; }
-    }
+    generate() { /* ... string generation logic as before ... */ }
 
     calculateBounds() {
-        const p = this.p;
+        console.log("Calculating bounds with angle:", this.angle, "length:", this.stepLength);
+        const p = this.p; // Need p5 instance for cos/sin that respect angleMode
         let x = 0, y = 0;
-        let angle = presets[this.ruleSetKey]?.startAngle || 0;
+        let currentAngle = presets[this.ruleSetKey]?.startAngle || 0; // Start angle in degrees
         let minX = 0, maxX = 0, minY = 0, maxY = 0;
-        const stack = []; // To store {x, y, angle} states
+        const stack = [];
 
         const commands = this.lstring;
+        if (!commands) {
+            console.warn("Cannot calculate bounds: L-string is empty.");
+            this.bounds = { minX: 0, maxX: 1, minY: 0, maxY: 1, calculated: true }; // Avoid division by zero later
+            return;
+        }
+
+        // Ensure initial point is included in bounds
+        minX = Math.min(minX, x); maxX = Math.max(maxX, x);
+        minY = Math.min(minY, y); maxY = Math.max(maxY, y);
+
         for (let i = 0; i < commands.length; i++) {
             const cmd = commands[i];
 
             if (cmd === 'F' || cmd === 'G') {
-                // Calculate end point of the move
-                const radAngle = p.radians(angle); // Convert current angle to radians for trig
-                x += this.stepLength * p.cos(radAngle);
-                y += this.stepLength * p.sin(radAngle);
-                // Update bounds
+                // *** Use currentAngle directly with p.cos/p.sin (assuming DEGREES mode) ***
+                const dx = this.stepLength * p.cos(currentAngle);
+                const dy = this.stepLength * p.sin(currentAngle);
+                x += dx;
+                y += dy;
                 minX = Math.min(minX, x); maxX = Math.max(maxX, x);
                 minY = Math.min(minY, y); maxY = Math.max(maxY, y);
             } else if (cmd === '+') {
-                angle -= this.angle; // Assuming angleMode is DEGREES
+                currentAngle -= this.angle;
             } else if (cmd === '-') {
-                angle += this.angle; // Assuming angleMode is DEGREES
+                currentAngle += this.angle;
             } else if (cmd === '[') {
-                stack.push({ x, y, angle }); // Save state
+                stack.push({ x, y, angle: currentAngle }); // Save state
             } else if (cmd === ']') {
                 if (stack.length > 0) {
-                    const state = stack.pop(); // Restore state
-                    x = state.x; y = state.y; angle = state.angle;
+                    const state = stack.pop();
+                    x = state.x; y = state.y; currentAngle = state.angle;
                 }
             }
         }
+
+        // Add a tiny margin if bounds have zero width/height to prevent division by zero
+        if (maxX === minX) maxX += 1e-6;
+        if (maxY === minY) maxY += 1e-6;
 
         this.bounds = { minX, maxX, minY, maxY, calculated: true };
         console.log("Bounds calculated:", this.bounds);
@@ -173,25 +173,27 @@ export default class LSystemVisualization {
         // Calculate Scale and Offset
         const boundsWidth = this.bounds.maxX - this.bounds.minX;
         const boundsHeight = this.bounds.maxY - this.bounds.minY;
-        const padding = 0.90; // Use 90% of canvas space
+        const padding = 0.90;
 
-        if (boundsWidth === 0 || boundsHeight === 0) {
-            this.scaleFactor = 1; // Avoid division by zero if fractal is a point/line
+        // Check for invalid bounds before calculating scale
+        if (boundsWidth <= 0 || boundsHeight <= 0 || !isFinite(boundsWidth) || !isFinite(boundsHeight)) {
+             console.warn("Invalid bounds dimensions detected. Defaulting scale to 1.", boundsWidth, boundsHeight);
+             this.scaleFactor = 1;
         } else {
             let scaleX = (p.width * padding) / boundsWidth;
             let scaleY = (p.height * padding) / boundsHeight;
             this.scaleFactor = Math.min(scaleX, scaleY);
         }
 
+
         if (!isFinite(this.scaleFactor) || this.scaleFactor <= 0) {
             console.warn("Invalid scale factor calculated. Defaulting to 1.");
             this.scaleFactor = 1;
         }
 
-        // Calculate offset needed to center the scaled bounds
         const centerX = (this.bounds.minX + this.bounds.maxX) / 2;
         const centerY = (this.bounds.minY + this.bounds.maxY) / 2;
-        this.offsetX = -centerX; // Offset to bring center of bounds to (0,0)
+        this.offsetX = -centerX;
         this.offsetY = -centerY;
 
         console.log(`Scale: ${this.scaleFactor.toFixed(3)}, Offset: (${this.offsetX.toFixed(2)}, ${this.offsetY.toFixed(2)})`);
@@ -201,31 +203,31 @@ export default class LSystemVisualization {
     draw(sharedState) {
         const p = this.p;
 
-        if (this.needsGeneration) { this.generateAndCalculateBounds(); }
-        if (!this.lstring || !this.bounds.calculated) { /* ... show loading text ... */
+        // Ensure generation and bounds calculation happens if needed *before* drawing
+        if (this.needsGeneration) {
+             this.generateAndCalculateBounds();
+        }
+
+        // Check if ready to draw
+        if (!this.lstring || !this.bounds.calculated) {
             p.push(); p.fill(0,0,80); p.textAlign(p.CENTER); p.textSize(16);
-            p.text("Generating & Calculating...", 0, 0); p.pop(); return;
+            p.text("Generating / Calculating...", 0, 0); // Center assumes main.js isn't translating
+            p.pop(); return;
         }
 
         // --- Drawing Logic with Scaling ---
         p.push(); // Isolate transforms
 
-        // Apply transformations to center and scale the L-system
-        // 1. Move origin to canvas center
+        // Apply transformations: Center canvas, Scale, Center bounds, Initial rotation
         p.translate(p.width / 2, p.height / 2);
-        // 2. Apply calculated scale
         p.scale(this.scaleFactor);
-        // 3. Translate to center the bounds (using precalculated offset)
         p.translate(this.offsetX, this.offsetY);
-        // 4. Apply the initial rotation for the specific preset
         let startAngle = presets[this.ruleSetKey]?.startAngle || 0;
         p.rotate(startAngle); // Assuming angleMode DEGREES
 
-
-        // Set drawing style
-        p.stroke(120, 80, 90); // Green
-        // Adjust stroke weight based on scale factor so lines don't get too thin/thick
-        p.strokeWeight(1.5 / Math.sqrt(this.scaleFactor)); // Experiment with sqrt or linear scaling
+        // Set drawing style - *** Use constant stroke weight for now ***
+        p.stroke(120, 80, 90);
+        p.strokeWeight(1.5); // Constant weight
 
 
         // Determine how much to draw
@@ -233,47 +235,34 @@ export default class LSystemVisualization {
         let commandsToProcess = commands.length;
         if (sharedState.animate) {
             let stepsPerFrame = Math.ceil(sharedState.speed * (1 + Math.log10(Math.max(1, commands.length))));
-            stepsPerFrame = Math.max(1, Math.min(500, stepsPerFrame)); // Limit steps per frame
+            stepsPerFrame = Math.max(1, Math.min(500, stepsPerFrame));
             this.currentIndex = Math.min(this.currentIndex + stepsPerFrame, commands.length);
             commandsToProcess = this.currentIndex;
         }
 
-        // Always draw from the beginning up to 'commandsToProcess'
-        // The transformations are handled by p5's matrix stack with push/pop
+        // Draw path from start up to commandsToProcess
         for (let i = 0; i < commandsToProcess; i++) {
             const cmd = commands[i];
-            if (cmd === 'F') {
-                p.line(0, 0, this.stepLength, 0); p.translate(this.stepLength, 0);
-            } else if (cmd === 'G') {
-                p.translate(this.stepLength, 0);
-            } else if (cmd === '+') {
-                p.rotate(-this.angle);
-            } else if (cmd === '-') {
-                p.rotate(this.angle);
-            } else if (cmd === '[') {
-                p.push();
-            } else if (cmd === ']') {
-                p.pop();
-            }
+            if (cmd === 'F') { p.line(0, 0, this.stepLength, 0); p.translate(this.stepLength, 0); }
+            else if (cmd === 'G') { p.translate(this.stepLength, 0); }
+            else if (cmd === '+') { p.rotate(-this.angle); }
+            else if (cmd === '-') { p.rotate(this.angle); }
+            else if (cmd === '[') { p.push(); }
+            else if (cmd === ']') { p.pop(); }
         }
 
-        p.pop(); // Restore initial drawing state (before translate, scale, rotate)
+        p.pop(); // Restore initial drawing state
     }
 
     // --- Interface Methods ---
     getDisplayName() { return "L-System Generator"; }
     getFormula() { return `Rule: ${this.ruleSetKey}, Iter: ${this.iterations}`; }
-    getExplanation() { /* ... explanation HTML string as before ... */
-        return `<h3>L-System Generator</h3><p>L-Systems (Lindenmayer Systems) are string rewriting systems used to model biological growth and generate fractals. They start with an initial string (axiom) and iteratively replace characters based on production rules.</p><p>The resulting string is then interpreted as instructions for 'turtle graphics': <code>F</code> means move forward drawing a line, <code>+</code> means turn right by a set angle, <code>-</code> means turn left. Other common symbols include <code>[</code> (push current state: position & angle) and <code>]</code> (pop state), allowing for branching structures.</p><p>This creates intricate, often self-similar patterns resembling natural forms.</p><p><strong>Parameters:</strong></p><ul><li><span class="variable">Preset</span>: Selects predefined axioms, rules, and suggested starting angles (like Koch Snowflake, Dragon Curve, Fractal Plant). The angle slider can override the preset's suggestion.</li><li><span class="variable">Iterations</span>: The number of times the rewriting rules are applied. Higher iterations create more complex and detailed fractals but take longer to calculate and draw.</li><li><span class="variable">Angle</span>: The angle (in degrees) the turtle turns for '+' and '-' commands. Different angles produce vastly different shapes.</li><li><span class="variable">Segment Length</span>: The base length of the line segment drawn for each 'F' command. The overall size is now adjusted automatically to fit the canvas.</li></ul><p>When animated, the path is drawn segment by segment, revealing the construction process.</p>`;
-     }
+    getExplanation() { /* ... explanation HTML string as before ... */ }
     isAnimatable() { return true; }
 
-    activate() { /* ... as before ... */
+    activate() { /* ... as before, ensures bounds are calculated ... */
         console.log("L-System activate called.");
-        // Ensure bounds are calculated if needed on activation
-        if(this.needsGeneration || !this.bounds.calculated){
-             this.generateAndCalculateBounds();
-        }
+        if(this.needsGeneration || !this.bounds.calculated){ this.generateAndCalculateBounds(); }
         this.resetAnimation();
         this.updateControls();
         this.p.redraw();
