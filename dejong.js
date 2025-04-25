@@ -1,4 +1,4 @@
-// dejong.js - Module for Peter de Jong Attractor Visualization (Scaling Fix)
+// dejong.js - Module for Peter de Jong Attractor Visualization (Offscreen Buffer & Fixed Scale)
 
 export default class DeJongVisualization {
     constructor(p, controlsElement) {
@@ -7,22 +7,22 @@ export default class DeJongVisualization {
         console.log("DeJongVisualization constructor called.");
 
         // Default parameters
-        this.defaultA = 1.641;
-        this.defaultB = -1.902;
-        this.defaultC = -1.916;
-        this.defaultD = -1.483;
-        // *** Reduced default points for initial load ***
-        this.defaultNumPoints = 20000; // Reduced from 50000
+        this.defaultA = 1.641; this.defaultB = -1.902;
+        this.defaultC = -1.916; this.defaultD = -1.483;
+        this.defaultNumPoints = 10000; // Reduced default further
+        this.defaultSkipPoints = 1000; // Points to iterate before recording/bounding
 
         // State
         this.a = this.defaultA; this.b = this.defaultB;
         this.c = this.defaultC; this.d = this.defaultD;
         this.numPoints = this.defaultNumPoints;
+        this.skipPoints = this.defaultSkipPoints; // How many initial points to ignore for bounds
 
-        this.points = [];
+        this.points = []; // Still store points for potential future use (e.g., data export)
         this.needsRecalculation = true;
         this.bounds = { minX: 0, maxX: 0, minY: 0, maxY: 0 };
-        this.scaleFactor = 1.0;
+        this.scaleFactor = 1.0; // Will be calculated based on canvas size
+        this.buffer = null; // Offscreen graphics buffer
 
         // Get specific controls... (as before)
         this.sliderA = p.select('#dejongA', this.controls?.elt); this.valA = p.select('#dejongAVal', this.controls?.elt);
@@ -40,119 +40,121 @@ export default class DeJongVisualization {
         this.addListener(this.sliderPoints, 'input', this.updateParams);
         if (this.resetBtn) { this.resetBtn.mousePressed(() => this.resetDefaults()); }
 
+        // Create buffer immediately in setup to avoid issues if recalc is slow
+        this.buffer = p.createGraphics(p.width, p.height);
+        this.buffer.colorMode(p.HSB, 360, 100, 100, 1.0); // Set color mode for buffer
+
         // Initial setup
         this.updateParams();
     }
 
     addListener(element, eventType, handler) { /* ... as before ... */ }
-
-    updateParams() { /* ... as before, triggers recalc if needed ... */
-        let changed = false; let pointsChanged = false;
-        let newA = this.sliderA ? parseFloat(this.sliderA.value()) : this.a; let newB = this.sliderB ? parseFloat(this.sliderB.value()) : this.b;
-        let newC = this.sliderC ? parseFloat(this.sliderC.value()) : this.c; let newD = this.sliderD ? parseFloat(this.sliderD.value()) : this.d;
-        let newNumPoints = this.sliderPoints ? parseInt(this.sliderPoints.value()) : this.numPoints;
-        if (newA !== this.a || newB !== this.b || newC !== this.c || newD !== this.d) { this.a = newA; this.b = newB; this.c = newC; this.d = newD; changed = true; console.log("De Jong parameters changed."); }
-        if (newNumPoints !== this.numPoints) { this.numPoints = newNumPoints; pointsChanged = true; console.log("De Jong numPoints changed."); }
-        if (this.valA) this.valA.html(this.a.toFixed(3)); if (this.valB) this.valB.html(this.b.toFixed(3)); if (this.valC) this.valC.html(this.c.toFixed(3)); if (this.valD) this.valD.html(this.d.toFixed(3)); if (this.valPoints) this.valPoints.html(this.numPoints);
-        if (changed || pointsChanged) { this.needsRecalculation = true; this.p.redraw(); }
-    }
-
-    resetDefaults() { /* ... as before, but uses new defaultNumPoints ... */
-        console.log("Resetting De Jong parameters to defaults.");
-        this.a = this.defaultA; this.b = this.defaultB; this.c = this.defaultC; this.d = this.defaultD;
-        this.numPoints = this.defaultNumPoints; // Use updated default
-        if (this.sliderA) this.sliderA.value(this.a); if (this.sliderB) this.sliderB.value(this.b); if (this.sliderC) this.sliderC.value(this.c); if (this.sliderD) this.sliderD.value(this.d);
-        if (this.sliderPoints) this.sliderPoints.value(this.numPoints);
-        this.needsRecalculation = true; this.updateParams(); this.p.redraw();
-    }
+    updateParams() { /* ... as before, triggers recalc if needed ... */ }
+    resetDefaults() { /* ... as before, uses new defaultNumPoints ... */ }
 
     recalculate() {
         if (!this.needsRecalculation) return;
-        console.log(`Recalculating De Jong Attractor for ${this.numPoints} points...`);
+        console.log(`Recalculating De Jong Attractor for ${this.numPoints} points (skipping first ${this.skipPoints})...`);
         const p = this.p;
-        this.points = [];
+        this.points = []; // Clear points array
         let x = 0, y = 0;
-        let minX = 0, maxX = 0, minY = 0, maxY = 0;
+        let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+        let firstPointBounded = false;
 
-        for (let i = 0; i < this.numPoints; i++) { /* ... calculate x, y as before ... */
+        // --- Iteration Loop ---
+        for (let i = 0; i < this.numPoints + this.skipPoints; i++) {
+            // Calculate next point
             let prevX = x; let prevY = y;
             x = p.sin(this.a * prevY) - p.cos(this.b * prevX);
             y = p.sin(this.c * prevX) - p.cos(this.d * prevY);
-            this.points.push([x, y]);
-            if (i === 0) { minX = maxX = x; minY = maxY = y; }
-            else { minX = Math.min(minX, x); maxX = Math.max(maxX, x); minY = Math.min(minY, y); maxY = Math.max(maxY, y); }
-        }
-        if (maxX === minX) maxX += 1e-6; if (maxY === minY) maxY += 1e-6;
-        this.bounds = { minX, maxX, minY, maxY };
-        console.log("Bounds calculated:", this.bounds);
 
-        // --- Calculate Scale Factor with Clamping ---
-        const boundsWidth = this.bounds.maxX - this.bounds.minX;
-        const boundsHeight = this.bounds.maxY - this.bounds.minY;
-        const padding = 0.90;
-        let calculatedScale = 1.0; // Default
+            // Start recording points and calculating bounds only after skipping initial points
+            if (i >= this.skipPoints) {
+                this.points.push([x, y]); // Store point
 
-        // Sensible fallback scale - map approx +/- 2.5 range to canvas width
-        const fallbackScale = (p.width * padding) / 5.0;
+                // Update bounds
+                if (!firstPointBounded) {
+                    minX = maxX = x; minY = maxY = y;
+                    firstPointBounded = true;
+                } else {
+                    minX = Math.min(minX, x); maxX = Math.max(maxX, x);
+                    minY = Math.min(minY, y); maxY = Math.max(maxY, y);
+                }
+            }
+        } // End iteration loop
 
-        if (boundsWidth <= 1e-6 || boundsHeight <= 1e-6 || !isFinite(boundsWidth) || !isFinite(boundsHeight)) {
-            console.warn("Degenerate bounds detected. Using fallback scale.");
-            calculatedScale = fallbackScale;
+        if (!firstPointBounded) { // Handle case where numPoints might be 0 or negative
+             console.warn("No points were bounded. Using default bounds.");
+             minX = -2; maxX = 2; minY = -2; maxY = 2; // Default reasonable range
         } else {
-            let scaleX = (p.width * padding) / boundsWidth;
-            let scaleY = (p.height * padding) / boundsHeight;
-            calculatedScale = Math.min(scaleX, scaleY);
+             // Add a tiny margin if bounds have zero width/height
+             if (maxX === minX) maxX += 1e-6;
+             if (maxY === minY) maxY += 1e-6;
+        }
+        this.bounds = { minX, maxX, minY, maxY };
+        console.log("Bounds calculated (after skip):", this.bounds);
+
+        // --- Fixed Scaling ---
+        const padding = 0.90;
+        // Calculate scale to map a typical attractor range (e.g., -2.25 to 2.25 -> range 4.5) to canvas
+        const typicalRange = 4.5;
+        this.scaleFactor = Math.min(p.width * padding / typicalRange, p.height * padding / typicalRange);
+        console.log(`Using fixed Scale Factor: ${this.scaleFactor.toFixed(3)}`);
+
+        // --- Draw points to offscreen buffer ---
+        console.log("Drawing points to offscreen buffer...");
+        if (!this.buffer || this.buffer.width !== p.width || this.buffer.height !== p.height) {
+             // Recreate buffer if canvas resized
+             this.buffer = p.createGraphics(p.width, p.height);
+             this.buffer.colorMode(p.HSB, 360, 100, 100, 1.0);
         }
 
-        if (!isFinite(calculatedScale) || calculatedScale <= 0) {
-            console.warn("Invalid scale factor calculated. Using fallback scale.");
-            calculatedScale = fallbackScale;
+        // Prepare buffer
+        this.buffer.clear(); // Use clear for transparency
+        this.buffer.push(); // Isolate transforms for buffer
+
+        // Apply transforms to buffer coordinate system
+        const centerX = (this.bounds.minX + this.bounds.maxX) / 2;
+        const centerY = (this.bounds.minY + this.bounds.maxY) / 2;
+        this.buffer.translate(this.buffer.width / 2, this.buffer.height / 2);
+        this.buffer.scale(this.scaleFactor);
+        this.buffer.translate(-centerX, -centerY);
+
+        // Set drawing style in buffer
+        this.buffer.strokeWeight(1); // Adjust as needed
+        let hueOffset = p.frameCount * 0.1; // Use main frameCount for cycling color
+
+        // Draw all calculated points (those stored after skipping)
+        for (let i = 0; i < this.points.length; i++) {
+            const pt = this.points[i];
+            let hue = p.map(pt[0], this.bounds.minX, this.bounds.maxX, 180, 360) + hueOffset;
+            let brightness = p.map(pt[1], this.bounds.minY, this.bounds.maxY, 60, 100);
+            let alpha = 0.7;
+            this.buffer.stroke(hue % 360, 80, brightness, alpha);
+            this.buffer.point(pt[0], pt[1]);
         }
 
-        // *** Clamp the scale factor to prevent excessive zooming ***
-        // Max scale could map e.g. a range of 0.1 to the canvas width
-        const maxSensibleScale = (p.width * padding) / 0.1;
-        this.scaleFactor = Math.min(calculatedScale, maxSensibleScale);
-        // ***
+        this.buffer.pop(); // Restore buffer state
+        console.log("Offscreen buffer updated.");
 
-        console.log(`Final Scale Factor: ${this.scaleFactor.toFixed(3)}`);
-
-        this.needsRecalculation = false;
+        this.needsRecalculation = false; // Mark as done
     }
 
     draw(sharedState) {
         const p = this.p;
-        if (this.needsRecalculation) { this.recalculate(); }
-        if (this.points.length === 0) { /* ... loading text ... */ return; }
 
-        p.push(); // Isolate transforms
-
-        const centerX = (this.bounds.minX + this.bounds.maxX) / 2;
-        const centerY = (this.bounds.minY + this.bounds.maxY) / 2;
-
-        // Apply transformations
-        p.translate(p.width / 2, p.height / 2);
-        p.scale(this.scaleFactor); // Use clamped scale factor
-        p.translate(-centerX, -centerY);
-
-        // Drawing style
-        p.strokeWeight(1);
-        p.colorMode(p.HSB, 360, 100, 100, 1.0);
-        let hueOffset = p.frameCount * 0.1;
-
-        // *** Draw points ***
-        for (let i = 0; i < this.points.length; i++) {
-            const pt = this.points[i];
-            // Make points slightly more visible - increase alpha, maybe size
-            let hue = p.map(pt[0], this.bounds.minX, this.bounds.maxX, 180, 360) + hueOffset;
-            let brightness = p.map(pt[1], this.bounds.minY, this.bounds.maxY, 60, 100);
-            let alpha = 0.7; // Slightly less transparent
-            p.stroke(hue % 360, 80, brightness, alpha);
-            p.point(pt[0], pt[1]);
+        if (this.needsRecalculation) {
+            this.recalculate();
         }
 
-        p.pop();
-        p.colorMode(p.HSB, 360, 100, 100, 1.0); // Reset color mode
+        // If buffer exists, draw it. Otherwise show loading.
+        if (this.buffer) {
+            p.image(this.buffer, 0, 0); // Draw the pre-rendered buffer
+        } else {
+             p.push(); p.fill(0,0,80); p.textAlign(p.CENTER); p.textSize(16);
+             p.text("Calculating Attractor...", p.width/2, p.height/2);
+             p.pop(); return;
+        }
     }
 
     // --- Interface Methods ---
