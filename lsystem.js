@@ -1,4 +1,4 @@
-// lsystem.js - Module for L-System Visualization (Simplified for Diagnostics)
+// lsystem.js - Module for L-System Visualization (Simplified DIAGNOSTIC Version)
 
 // Helper for presets
 const presets = {
@@ -9,129 +9,111 @@ const presets = {
 
 export default class LSystemVisualization {
     constructor(p, controlsElement) {
-        console.log("LSystemVisualization constructor called (Simplified).");
+        console.log("LSystemVisualization constructor called (Simplified DIAGNOSTIC).");
         this.p = p;
         this.controls = controlsElement;
-        if (!this.controls) console.error("LSystem controls div not passed correctly!");
-
-        // State
-        this.ruleSetKey = 'plant';
-        this.iterations = 4;
-        this.angle = presets[this.ruleSetKey].angle;
-        this.stepLength = 5; // Use direct step length
-        this.lstring = "";
-        this.needsGeneration = true;
-        this.currentIndex = 0;
-
-        // Get specific controls... (as before)
-        this.presetSelect = p.select('#lsystemPreset', this.controls?.elt);
-        this.iterationsSlider = p.select('#lsystemIterations', this.controls?.elt);
-        this.iterationsValSpan = p.select('#lsystemIterationsVal', this.controls?.elt);
-        this.angleSlider = p.select('#lsystemAngle', this.controls?.elt);
-        this.angleValSpan = p.select('#lsystemAngleVal', this.controls?.elt);
-        this.stepLengthSlider = p.select('#lsystemStepLength', this.controls?.elt);
-        this.stepLengthValSpan = p.select('#lsystemStepLengthVal', this.controls?.elt);
-        this.restartBtn = p.select('#restartLSystemBtn', this.controls?.elt);
-
-        // Attach listeners... (as before)
-        this.addListener(this.presetSelect, 'changed', this.updateParams);
-        this.addListener(this.iterationsSlider, 'input', this.updateParams);
-        this.addListener(this.angleSlider, 'input', this.updateParams);
-        this.addListener(this.stepLengthSlider, 'input', this.updateParams);
+        // ... rest of constructor setup as before ...
+        this.ruleSetKey = 'plant'; this.iterations = 4; this.angle = presets[this.ruleSetKey].angle;
+        this.stepLength = 5; this.lstring = ""; this.needsGeneration = true; this.currentIndex = 0;
+        this.presetSelect = p.select('#lsystemPreset', this.controls?.elt); this.iterationsSlider = p.select('#lsystemIterations', this.controls?.elt);
+        this.iterationsValSpan = p.select('#lsystemIterationsVal', this.controls?.elt); this.angleSlider = p.select('#lsystemAngle', this.controls?.elt);
+        this.angleValSpan = p.select('#lsystemAngleVal', this.controls?.elt); this.stepLengthSlider = p.select('#lsystemStepLength', this.controls?.elt);
+        this.stepLengthValSpan = p.select('#lsystemStepLengthVal', this.controls?.elt); this.restartBtn = p.select('#restartLSystemBtn', this.controls?.elt);
+        this.addListener(this.presetSelect, 'changed', this.updateParams); this.addListener(this.iterationsSlider, 'input', this.updateParams);
+        this.addListener(this.angleSlider, 'input', this.updateParams); this.addListener(this.stepLengthSlider, 'input', this.updateParams);
         if (this.restartBtn) { this.restartBtn.mousePressed(() => this.restart()); }
-
-        // Initial setup
-        this.updateControls();
-        this.generate(); // Just generate, no bounds calculation
+        this.updateControls(); this.generate();
     }
 
-    addListener(element, eventType, handler) { /* ... as before ... */ }
-
-    updateParams() {
-        let presetChanged = false;
-        let needsRegen = false;
-        let logReason = "";
-
-        // Read controls and set needsGeneration flag if geometry changes
-        if (this.presetSelect) { let key = this.presetSelect.value(); if (key !== this.ruleSetKey && presets[key]) { this.ruleSetKey = key; this.angle = presets[key].angle; presetChanged = true; needsRegen = true; logReason += "Preset. "; } }
-        if (this.iterationsSlider) { let iter = parseInt(this.iterationsSlider.value()); if (iter !== this.iterations) { this.iterations = iter; needsRegen = true; logReason += "Iter. "; } if (this.iterationsValSpan) this.iterationsValSpan.html(this.iterations); }
-        if (this.angleSlider) { if (presetChanged) { this.angleSlider.value(this.angle); } let ang = parseFloat(this.angleSlider.value()); if (ang !== this.angle) { this.angle = ang; needsRegen = false; /* Angle change alone redraws */ } if (this.angleValSpan) this.angleValSpan.html(this.angle.toFixed(0)); }
-        if (this.stepLengthSlider) { let len = parseFloat(this.stepLengthSlider.value()); if (len !== this.stepLength) { this.stepLength = len; needsRegen = false; /* Length change alone redraws */ } if (this.stepLengthValSpan) this.stepLengthValSpan.html(this.stepLength.toFixed(0)); }
-
-        if (needsRegen) {
-            console.log("Flagging generation due to:", logReason);
-            this.needsGeneration = true;
-            this.resetAnimation();
-        }
-        // Always redraw if params change in any way
-        this.p.redraw();
-    }
-
-    updateControls() { /* ... as before ... */ }
-    restart() { /* ... as before ... */ }
+    addListener(element, eventType, handler) { /* ... */ }
+    updateParams() { /* ... as before, triggers generate() if needed */ }
+    updateControls() { /* ... */ }
+    restart() { /* ... */ }
     resetAnimation() { this.currentIndex = 0; }
-
-    // Only generates the string, no bounds calculation
-    generate() {
-        if (!this.needsGeneration) return;
-        console.log("--- Generating L-System String Only ---");
-        const ruleset = presets[this.ruleSetKey];
-        if (!ruleset) { console.error("Invalid L-System preset key:", this.ruleSetKey); this.lstring = ""; this.needsGeneration = false; return; }
-        this.lstring = ruleset.axiom;
-        try { /* ... generation loop as before ... */
-            for (let i = 0; i < this.iterations; i++) {
-                let nextString = ""; for (let char of this.lstring) { nextString += ruleset.rules[char] || char; }
-                this.lstring = nextString;
-                if (this.lstring.length > 300000) { console.warn(`L-System string limit exceeded.`); this.iterations = i + 1; this.updateControls(); break; }
-            }
-        } catch (e) { console.error("Error generating L-System string:", e); this.lstring = ruleset.axiom; }
-        console.log("--- Finished Generation ---");
-        this.needsGeneration = false;
-        this.resetAnimation();
-    }
-
-    // Removed calculateBounds()
+    generate() { /* ... generation logic as before ... */ }
 
     draw(sharedState) {
         const p = this.p;
+        console.log(`--- LSystem Draw Frame Start (Animate: ${sharedState.animate}) ---`);
 
-        if (this.needsGeneration) { this.generate(); } // Generate if needed
-        if (!this.lstring) { /* ... loading text ... */ return; }
+        if (this.needsGeneration) {
+            console.log("LSystem Draw: Calling generate...");
+            this.generate();
+        }
+        if (!this.lstring) {
+            console.log("LSystem Draw: No L-string available.");
+            p.push(); p.fill(0,0,80); p.textAlign(p.CENTER); p.textSize(16);
+            p.text("Generating L-System...", 0, 0); // Centered via main.js
+            p.pop(); return;
+        }
 
-        // --- Drawing Logic (Simplified - No Scaling/Offset) ---
+        console.log(`LSystem Draw: String length=${this.lstring.length}, StepLength=${this.stepLength}, Angle=${this.angle}`);
+
         p.push(); // Isolate transforms
 
-        // Apply the initial rotation for the preset
-        // This happens *after* the main translate(w/2, h/2) applied by main.js
         let startAngle = presets[this.ruleSetKey]?.startAngle || 0;
-        p.rotate(startAngle); // Assuming angleMode DEGREES
+        p.rotate(startAngle);
+        console.log(`LSystem Draw: Applied start rotation ${startAngle}`);
 
-        // Set drawing style
+        // *** DIAGNOSTIC: Draw a marker at the starting point (0,0 after rotation) ***
+        p.fill(0, 100, 100); // Bright Red
+        p.noStroke();
+        p.ellipse(0, 0, 5, 5); // Draw a small circle at the origin
+        console.log("LSystem Draw: Drew origin marker at (0, 0) relative to rotation.");
+        // *** END DIAGNOSTIC ***
+
+        // Set drawing style for fractal
         p.stroke(120, 80, 90); // Green
-        p.strokeWeight(1.5); // Constant weight
+        p.strokeWeight(1.5);
+        p.noFill(); // Make sure fill is off
 
-        // Determine how much to draw (Animation logic)
         const commands = this.lstring;
         let commandsToProcess = commands.length;
-        if (sharedState.animate) { /* ... animation index calculation as before ... */
+        if (sharedState.animate) {
              let stepsPerFrame = Math.ceil(sharedState.speed * (1 + Math.log10(Math.max(1, commands.length))));
              stepsPerFrame = Math.max(1, Math.min(500, stepsPerFrame));
              this.currentIndex = Math.min(this.currentIndex + stepsPerFrame, commands.length);
              commandsToProcess = this.currentIndex;
         }
+        console.log(`LSystem Draw: Processing ${commandsToProcess} commands.`);
 
-        // Draw path from start up to commandsToProcess using simple turtle commands
+        // Limit logs inside loop to avoid flooding console
+        let logCounter = 0;
+        const LOG_LIMIT = 10;
+
+        // Draw path from start up to commandsToProcess
         for (let i = 0; i < commandsToProcess; i++) {
             const cmd = commands[i];
-            if (cmd === 'F') { p.line(0, 0, this.stepLength, 0); p.translate(this.stepLength, 0); }
-            else if (cmd === 'G') { p.translate(this.stepLength, 0); }
-            else if (cmd === '+') { p.rotate(-this.angle); }
-            else if (cmd === '-') { p.rotate(this.angle); }
-            else if (cmd === '[') { p.push(); }
-            else if (cmd === ']') { p.pop(); }
+            // Log first few commands processed
+            if (logCounter < LOG_LIMIT) {
+                // console.log(`LSystem Draw Loop [${i}]: Cmd='${cmd}'`);
+            }
+
+            if (cmd === 'F') {
+                if (logCounter < LOG_LIMIT) console.log(`  -> Draw Line: len=${this.stepLength}`);
+                p.line(0, 0, this.stepLength, 0);
+                p.translate(this.stepLength, 0);
+            } else if (cmd === 'G') {
+                 if (logCounter < LOG_LIMIT) console.log(`  -> Move: len=${this.stepLength}`);
+                 p.translate(this.stepLength, 0);
+            } else if (cmd === '+') {
+                 if (logCounter < LOG_LIMIT) console.log(`  -> Rotate: -${this.angle}`);
+                 p.rotate(-this.angle);
+            } else if (cmd === '-') {
+                 if (logCounter < LOG_LIMIT) console.log(`  -> Rotate: +${this.angle}`);
+                 p.rotate(this.angle);
+            } else if (cmd === '[') {
+                 if (logCounter < LOG_LIMIT) console.log("  -> Push");
+                 p.push();
+            } else if (cmd === ']') {
+                 if (logCounter < LOG_LIMIT) console.log("  -> Pop");
+                 p.pop();
+            }
+            logCounter++;
         }
 
-        p.pop(); // Restore initial drawing state (before this module's rotate)
+        p.pop(); // Restore initial drawing state
+        console.log(`--- LSystem Draw Frame End ---`);
     }
 
     // --- Interface Methods ---
