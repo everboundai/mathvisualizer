@@ -19,13 +19,13 @@ export default class LissajousVisualization {
         this.b = this.defaultB;
         this.freqA = this.defaultFreqA;
         this.freqB = this.defaultFreqB;
-        this.delta = this.defaultDelta;
+        this.delta = this.defaultDelta; // Keep delta in degrees (from slider)
         this.trailLength = this.defaultTrailLength;
         this.pointSize = this.defaultPointSize;
 
         // Animation State
         this.points = []; // Stores points for the trail
-        this.currentTime = 0; // Tracks 't' for animation
+        this.currentTime = 0; // Tracks 't' (conceptually radians) for animation
 
         // Get specific controls from within the parent
         this.sliderA = p.select('#lissajousA', this.controls?.elt);
@@ -78,7 +78,7 @@ export default class LissajousVisualization {
         let newB = this.sliderB ? parseFloat(this.sliderB.value()) : this.b; if (newB !== this.b) { this.b = newB; needsReset = true; }
         let newFreqA = this.sliderFreqA ? parseInt(this.sliderFreqA.value()) : this.freqA; if (newFreqA !== this.freqA) { this.freqA = newFreqA; needsReset = true; }
         let newFreqB = this.sliderFreqB ? parseInt(this.sliderFreqB.value()) : this.freqB; if (newFreqB !== this.freqB) { this.freqB = newFreqB; needsReset = true; }
-        let newDelta = this.sliderDelta ? parseFloat(this.sliderDelta.value()) : this.delta; if (newDelta !== this.delta) { this.delta = newDelta; needsReset = true; }
+        let newDelta = this.sliderDelta ? parseFloat(this.sliderDelta.value()) : this.delta; if (newDelta !== this.delta) { this.delta = newDelta; needsReset = true; } // Keep delta in degrees
         let newTrail = this.sliderTrail ? parseInt(this.sliderTrail.value()) : this.trailLength; if (newTrail !== this.trailLength) this.trailLength = newTrail;
         let newSize = this.sliderSize ? parseInt(this.sliderSize.value()) : this.pointSize; if (newSize !== this.pointSize) this.pointSize = newSize;
 
@@ -87,7 +87,7 @@ export default class LissajousVisualization {
         if (this.valB) this.valB.html(this.b.toFixed(0));
         if (this.valFreqA) this.valFreqA.html(this.freqA);
         if (this.valFreqB) this.valFreqB.html(this.freqB);
-        if (this.valDelta) this.valDelta.html(this.delta.toFixed(0));
+        if (this.valDelta) this.valDelta.html(this.delta.toFixed(0)); // Display delta in degrees
         if (this.valTrail) this.valTrail.html(this.trailLength);
         if (this.valSize) this.valSize.html(this.pointSize);
 
@@ -129,13 +129,23 @@ export default class LissajousVisualization {
         let drawA = this.a; let drawB = this.b;
         p.push();
 
+        // Conversion factor from radians to degrees
+        const radToDeg = 180 / Math.PI;
+
         if (sharedState.animate) {
             // --- Animated Drawing ---
+            // Increment time (treating currentTime conceptually as radians for smooth progression)
             this.currentTime += sharedState.speed * 0.05;
-            let t = this.currentTime;
-            let deltaRad = this.delta * (Math.PI / 180);
-            let currentX = drawA * p.sin(this.freqA * t + deltaRad);
-            let currentY = drawB * p.sin(this.freqB * t);
+            let t_rad = this.currentTime;
+
+            // *** Convert t to degrees for p.sin() ***
+            let t_deg = t_rad * radToDeg;
+
+            // Calculate current point using degrees
+            // Use this.delta directly as it's already in degrees
+            let currentX = drawA * p.sin(this.freqA * t_deg + this.delta);
+            let currentY = drawB * p.sin(this.freqB * t_deg);
+
             this.points.push({ x: currentX, y: currentY });
             while (this.points.length > this.trailLength) { this.points.shift(); }
 
@@ -157,17 +167,20 @@ export default class LissajousVisualization {
             p.noFill();
             p.beginShape();
 
-            // *** Increased drawing range and steps for static mode ***
-            // Determine maxT based on LCM or simply a larger multiple of 2*PI
-            // A simple large multiple is often sufficient for visualization.
-            let maxT = 2 * Math.PI * 12; // Increased range (Try 12 cycles)
-            let numSteps = 1000; // Increased steps for smoothness over longer range
+            // Define range in radians, but convert inside the loop for p.sin()
+            let maxT_rad = 2 * Math.PI * 12; // Range for t in radians
+            let numSteps = 1000;
 
             for (let i = 0; i <= numSteps; i++) {
-                 let t = p.map(i, 0, numSteps, 0, maxT);
-                 let deltaRad = this.delta * (Math.PI / 180);
-                 let x = drawA * p.sin(this.freqA * t + deltaRad);
-                 let y = drawB * p.sin(this.freqB * t);
+                 // Calculate t in radians for mapping
+                 let t_rad = p.map(i, 0, numSteps, 0, maxT_rad);
+                 // *** Convert t to degrees for p.sin() ***
+                 let t_deg = t_rad * radToDeg;
+
+                 // Calculate point using degrees
+                 // Use this.delta directly as it's already in degrees
+                 let x = drawA * p.sin(this.freqA * t_deg + this.delta);
+                 let y = drawB * p.sin(this.freqB * t_deg);
                  p.vertex(x, y);
             }
             p.endShape();
