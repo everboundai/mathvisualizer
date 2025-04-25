@@ -27,7 +27,7 @@
                     <option value="flower">Polar Flower (Rose)</option>
                     <option value="lorenz">Lorenz Attractor</option>
                     <option value="lissajous">Lissajous Curves</option>
-                    </select>
+                    <option value="dejong">De Jong Attractor</option> </select>
             </div>
 
             <div class="control-group general-controls animation-controls" style="display: none;">
@@ -49,7 +49,8 @@
                      <div class="control-group"> <label for="lorenzBeta">&beta;: <span id="lorenzBetaVal">2.67</span></label> <input type="range" id="lorenzBeta" min="0.1" max="5" value="2.667" step="0.01"> </div>
                      <div class="control-group"> <label for="lorenzSteps">Points: <span id="lorenzStepsVal">10000</span></label> <input type="range" id="lorenzSteps" min="1000" max="20000" value="10000" step="500"> </div>
                      <div class="control-group"> <label for="lorenzDt">dt: <span id="lorenzDtVal">0.01</span></label> <input type="range" id="lorenzDt" min="0.001" max="0.05" value="0.01" step="0.001"> </div>
-                     <div class="control-group"> <button id="resetLorenzBtn">Reset</button> </div> <p class="note">(2D Projection Shown)</p>
+                     <div class="control-group"> <button id="resetLorenzBtn">Reset</button> </div>
+                     <p class="note">(2D Projection Shown)</p>
                 </div>
 
                 <div id="lissajousControls" class="viz-controls">
@@ -65,7 +66,17 @@
                     <p class="note">(Check 'Animate?' box to trace curve)</p>
                 </div>
 
-                 </div> </div> <div id="canvasContainer">
+                <div id="dejongControls" class="viz-controls">
+                    <h4>Parameters</h4>
+                    <div class="control-group"> <label for="dejongA">a: <span id="dejongAVal">1.641</span></label> <input type="range" id="dejongA" min="-3" max="3" value="1.641" step="0.001"> </div>
+                    <div class="control-group"> <label for="dejongB">b: <span id="dejongBVal">-1.902</span></label> <input type="range" id="dejongB" min="-3" max="3" value="-1.902" step="0.001"> </div>
+                    <div class="control-group"> <label for="dejongC">c: <span id="dejongCVal">-1.916</span></label> <input type="range" id="dejongC" min="-3" max="3" value="-1.916" step="0.001"> </div>
+                    <div class="control-group"> <label for="dejongD">d: <span id="dejongDVal">-1.483</span></label> <input type="range" id="dejongD" min="-3" max="3" value="-1.483" step="0.001"> </div>
+                    <div class="control-group"> <label for="dejongPoints">Points: <span id="dejongPointsVal">50000</span></label> <input type="range" id="dejongPoints" min="10000" max="150000" value="50000" step="1000"> </div>
+                    <div class="control-group"><button id="resetDeJongBtn">Reset Defaults</button></div>
+                </div>
+
+            </div> </div> <div id="canvasContainer">
             </div> </div> <div id="explanationContainer" class="explanation-section">
         </div> <script src="p5.min.js"></script>
     <script type="module" src="main.js" defer></script>

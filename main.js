@@ -3,8 +3,9 @@
 // Import visualization modules
 import FlowerVisualization from './flower.js';
 import LorenzVisualization from './lorenz.js';
-// import LSystemVisualization from './lsystem.js'; // Removed L-System import
+// L-System removed
 import LissajousVisualization from './lissajous.js';
+import DeJongVisualization from './dejong.js'; // Added De Jong import
 
 const sketch = (p) => {
 
@@ -59,7 +60,7 @@ const sketch = (p) => {
              visualizations['flower'] = new FlowerVisualization(p, p.select('#flowerControls'));
              visualizations['lorenz'] = new LorenzVisualization(p, p.select('#lorenzControls'));
              visualizations['lissajous'] = new LissajousVisualization(p, p.select('#lissajousControls'));
-             // visualizations['lsystem'] = new LSystemVisualization(p, p.select('#lsystemControls')); // Removed L-System instantiation
+             visualizations['dejong'] = new DeJongVisualization(p, p.select('#dejongControls')); // Added De Jong instantiation
              console.log("Visualization modules instantiated:", Object.keys(visualizations));
         } catch (e) {
              console.error("Error instantiating visualization modules:", e);
@@ -87,7 +88,6 @@ const sketch = (p) => {
         // Initial UI setup
         currentVizKey = vizSelect.value();
         if (!visualizations[currentVizKey] && currentVizKey !== 'about') {
-            // If the initially selected value is no longer valid (e.g., was lsystem), default to 'about'
             currentVizKey = 'about';
             if (vizSelect) vizSelect.value(currentVizKey);
         }
@@ -105,11 +105,11 @@ const sketch = (p) => {
         const activeViz = visualizations[currentVizKey];
 
         if (activeViz?.draw) {
-            // Apply centering ONLY for visualizations that need it
+            // Apply centering ONLY for visualizations that DO NOT handle their own scaling/centering
             const needsCentering = (
                 currentVizKey === 'flower' ||
                 currentVizKey === 'lissajous'
-                 // L-System was already removed from this list
+                 // Lorenz and De Jong handle their own transforms
             );
 
             if (needsCentering) {
@@ -135,7 +135,6 @@ const sketch = (p) => {
             p.text("Select a visualization from the Controls panel.", p.width / 2, p.height / 2);
             p.pop();
         } else if (currentVizKey && currentVizKey !== 'about') {
-             // This case might now happen if dropdown somehow has an invalid value
              console.warn("Draw condition failed for unrecognized key:", currentVizKey);
              p.push();
              p.fill(0, 100, 80); // Warning color (Red)
@@ -178,7 +177,7 @@ const sketch = (p) => {
         } else if (activeViz) {
             // Fetch details directly from the module instance
             try {
-                displayName = typeof activeViz.getDisplayName === 'function' ? activeViz.getDisplayName() : "Unknown"; // Removed fallback to map
+                displayName = typeof activeViz.getDisplayName === 'function' ? activeViz.getDisplayName() : "Unknown";
                 formulaHTML = typeof activeViz.getFormula === 'function' ? activeViz.getFormula() : "";
                 explanationHTML = typeof activeViz.getExplanation === 'function' ? activeViz.getExplanation() : "<p>No explanation available.</p>";
                 showAnimControls = typeof activeViz.isAnimatable === 'function' ? activeViz.isAnimatable() : false;
@@ -186,8 +185,8 @@ const sketch = (p) => {
                 console.error(`Error getting details from module ${currentVizKey}:`, e);
             }
         } else {
-             // Handle case where the key is not 'about' and viz not found (shouldn't happen now)
-             displayName = currentVizKey;
+             // Handle case where the key is not 'about' and viz not found
+             displayName = currentVizKey; // Show the key name at least
              formulaHTML = "Error loading formula.";
              explanationHTML = `<p>Failed to load the '${displayName}' visualization module. Check console.</p>`;
         }
@@ -236,7 +235,7 @@ const sketch = (p) => {
                      }
                  }
              } else {
-                 // Fallback logic (less likely needed now)
+                 // Fallback logic
                  console.warn(`!!! Control div reference not found in '${currentVizKey}' object. Trying ID fallback.`);
                  const fallbackControl = p.select('#' + currentVizKey + 'Controls');
                  if (fallbackControl) {
@@ -250,8 +249,7 @@ const sketch = (p) => {
         } else if (currentVizKey === 'about') {
             console.log("Hiding all specific controls for 'about'.");
         } else {
-            // This case should ideally not be reached if dropdown is clean
-            console.warn(`Skipping control activation for '${currentVizKey}' (module missing or key invalid).`);
+             console.warn(`Skipping control activation for '${currentVizKey}' (module missing or key invalid).`);
         }
         console.log("--- Finished Activating Controls ---");
 
