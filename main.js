@@ -6,6 +6,8 @@ import LorenzVisualization from './lorenz.js';
 // L-System removed
 import LissajousVisualization from './lissajous.js';
 import DeJongVisualization from './dejong.js'; // Added De Jong import
+import HenonVisualization from './henon.js';
+
 
 const sketch = (p) => {
 
@@ -61,6 +63,7 @@ const sketch = (p) => {
              visualizations['lorenz'] = new LorenzVisualization(p, p.select('#lorenzControls'));
              visualizations['lissajous'] = new LissajousVisualization(p, p.select('#lissajousControls'));
              visualizations['dejong'] = new DeJongVisualization(p, p.select('#dejongControls')); // Added De Jong instantiation
+	     visualizations['henon'] = new HenonVisualization(p, p.select('#henonControls'));
              console.log("Visualization modules instantiated:", Object.keys(visualizations));
         } catch (e) {
              console.error("Error instantiating visualization modules:", e);
